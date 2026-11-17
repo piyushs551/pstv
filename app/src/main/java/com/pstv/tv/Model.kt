@@ -18,6 +18,7 @@ data class Item(
     val tvg: String? = null,
     val rating: Float? = null,
     val genres: String? = null,
+    val note: String? = null,
 ) {
     val progress: Float get() = if (durMs > 0) (posMs.toFloat() / durMs).coerceIn(0f, 1f) else 0f
     /** Best image for a poster-style card. */

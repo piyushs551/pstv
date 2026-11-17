@@ -55,6 +55,8 @@ class PlayerActivity : BaseActivity() {
     private var fallbackUsed = false
     private var matched = false
     private var hasExtSub = false
+    private var parentUrl: String? = null
+    private var epLabel: String? = null
 
     private var channels: List<Item> = emptyList()
     private var chIndex = -1
@@ -83,6 +85,7 @@ class PlayerActivity : BaseActivity() {
         season = i.getIntExtra("season", 0); episode = i.getIntExtra("episode", 0)
         baseName = i.getStringExtra("baseName") ?: title
         year = i.getIntExtra("year", -1).takeIf { it > 0 }
+        parentUrl = i.getStringExtra("parent")?.ifEmpty { null }; epLabel = i.getStringExtra("label")?.ifEmpty { null }
         setTitles()
 
         seeker = SeekController({ engine }) { t, d -> showOverlay(preview = t, previewDur = d) }
@@ -222,7 +225,7 @@ class PlayerActivity : BaseActivity() {
         val e = engine ?: return
         if (isLive) return
         val dur = e.duration
-        if (dur > 0 && e.position > 5000) Db.saveProgress(key, e.position, dur)
+        if (dur > 0 && e.position > 5000) Db.saveProgress(key, e.position, dur, parentUrl, epLabel)
     }
 
     private var tick = 0

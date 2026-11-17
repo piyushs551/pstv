@@ -53,6 +53,7 @@ object Nav {
                 .putExtra("kind", item.kind.ordinal).putExtra("group", item.group)
                 .putExtra("season", season).putExtra("episode", episode)
                 .putExtra("baseName", item.name).putExtra("year", item.year ?: -1)
+                .putExtra("parent", if (key != item.url) item.url else "").putExtra("label", if (season > 0) "S$season E$episode" else "")
         )
     }
 }

@@ -301,6 +301,7 @@ class Hero(private val act: HomeActivity) {
         if (url == shownUrl) return@Runnable
         val my = ++token
         if (url.isNullOrBlank()) { swap(null, item, my); return@Runnable }
+        back.scaleType = if (item.backdrop != null) ImageView.ScaleType.CENTER_CROP else ImageView.ScaleType.FIT_END
         back.load(url, Images.loader) {
             size(Size(w, h)); precision(Precision.INEXACT)
             listener(onSuccess = { _, _ -> swap(url, item, my) }, onError = { _, _ -> swap(null, item, my) })
@@ -309,6 +310,7 @@ class Hero(private val act: HomeActivity) {
 
     private fun swap(url: String?, item: Item, my: Int) {
         if (my != token) return
+        if (url == null) back.scaleType = ImageView.ScaleType.FIT_XY
         if (url == null) back.setImageDrawable(NameTile(item.name, act, when (item.kind) { Kind.LIVE -> R.drawable.ic_live; Kind.MOVIE -> R.drawable.ic_movies; Kind.SERIES -> R.drawable.ic_shows }))
         shownUrl = url
         back.animate().cancel(); front.animate().cancel()

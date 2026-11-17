@@ -58,7 +58,7 @@ object Card {
     fun h(c: Context, item: Item) = Tokens.pxi(c, if (item.isWide) R.dimen.wide_h else R.dimen.poster_h)
 
     fun sub(item: Item): String = when {
-        item.progress > 0f -> "${(item.progress * 100).toInt()}% watched"
+        item.progress > 0f -> listOfNotNull(item.note, "${(item.progress * 100).toInt()}% watched").joinToString("  •  ")
         item.kind == Kind.LIVE -> item.group
         else -> listOfNotNull(item.year?.toString(), item.genres?.substringBefore(',')).joinToString("  •  ")
     }
@@ -90,9 +90,11 @@ class CardAdapter(private val row: RowDesc, private val host: CardHost) : Recycl
         val c: Context = h.itemView.context
         val w = Card.w(c, item); val ht = Card.h(c, item)
         h.frame.layoutParams = LinearLayout.LayoutParams(w, ht)
+        h.frame.clipToOutline = true
+        h.frame.outlineProvider = object : android.view.ViewOutlineProvider() { override fun getOutline(v: View, o: android.graphics.Outline) { o.setRoundRect(0, 0, v.width, v.height, Tokens.px(v.context, R.dimen.radius_card)) } }
         h.itemView.layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginEnd = Tokens.pxi(c, R.dimen.card_gap) }
         val logoOnly = item.kind == Kind.LIVE && item.logo != null
-        h.img.scaleType = if (logoOnly) ImageView.ScaleType.FIT_CENTER else ImageView.ScaleType.CENTER_CROP
+        (h.img as CardImageView).topCrop = !logoOnly
         val pad = if (logoOnly) dp(c, 24) else 0
         h.img.setPadding(pad, pad / 2, pad, pad / 2)
         Images.card(h.img, item.cardArt, cleanTitle(item.name), w, ht, when (item.kind) { Kind.LIVE -> R.drawable.ic_live; Kind.MOVIE -> R.drawable.ic_movies; Kind.SERIES -> R.drawable.ic_shows })

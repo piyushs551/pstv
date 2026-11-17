@@ -91,7 +91,7 @@ object Xtream {
         }
     }
 
-    data class Episode(val season: Int, val number: Int, val title: String, val url: String)
+    data class Episode(val season: Int, val number: Int, val title: String, val url: String, val image: String? = null, val plot: String? = null, val duration: String? = null)
 
     /** Episodes of one series, fetched on demand when the user opens it. */
     fun episodes(seriesUrl: String): List<Episode> {
@@ -104,7 +104,9 @@ object Xtream {
             for (i in 0 until arr.length()) {
                 val e = arr.getJSONObject(i)
                 val ext = e.optString("container_extension", "mp4").ifBlank { "mp4" }
-                out += Episode(season.toIntOrNull() ?: 0, e.optInt("episode_num", i + 1), e.optString("title", "Episode ${i + 1}"), episodeUrl(e.optString("id"), ext))
+                val info = e.optJSONObject("info")
+                out += Episode(season.toIntOrNull() ?: 0, e.optInt("episode_num", i + 1), e.optString("title", "Episode ${i + 1}"), episodeUrl(e.optString("id"), ext),
+                    info?.optString("movie_image")?.ifBlank { null }, info?.optString("plot")?.ifBlank { null }, info?.optString("duration")?.ifBlank { null })
             }
         }
         return out.sortedWith(compareBy({ it.season }, { it.number }))

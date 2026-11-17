@@ -20,7 +20,7 @@ object Db {
     private val rd get() = helper.readableDatabase
     private val wr get() = helper.writableDatabase
 
-    private class H(c: Context) : SQLiteOpenHelper(c, "pstv.db", null, 2) {
+    private class H(c: Context) : SQLiteOpenHelper(c, "pstv.db", null, 3) {
         override fun onConfigure(db: SQLiteDatabase) { db.setForeignKeyConstraintsEnabled(false); db.enableWriteAheadLogging() }
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL("""CREATE TABLE items(id INTEGER PRIMARY KEY, kind INTEGER, grp TEXT, name TEXT, norm TEXT, logo TEXT, url TEXT, year INTEGER, overview TEXT, backdrop TEXT, poster TEXT, tvg TEXT, rating REAL, genres TEXT, sort INTEGER)""")
@@ -30,7 +30,7 @@ object Db {
             db.execSQL("CREATE UNIQUE INDEX i_url ON items(url)")
             db.execSQL("CREATE VIRTUAL TABLE items_fts USING fts4(content='items', norm)")
             db.execSQL("CREATE TABLE favs(url TEXT PRIMARY KEY, ts INTEGER)")
-            db.execSQL("CREATE TABLE recents(url TEXT PRIMARY KEY, pos INTEGER, dur INTEGER, ts INTEGER)")
+            db.execSQL("CREATE TABLE recents(url TEXT PRIMARY KEY, pos INTEGER, dur INTEGER, ts INTEGER, parent TEXT, label TEXT)")
             db.execSQL("CREATE TABLE livehist(url TEXT PRIMARY KEY, ts INTEGER)")
             db.execSQL("CREATE TABLE seen(url TEXT PRIMARY KEY, ts INTEGER)")
             // TMDB metadata survives playlist refreshes, keyed by normalised title + kind.
@@ -39,7 +39,9 @@ object Db {
             db.execSQL("CREATE INDEX i_epg ON epg(ch, start)")
         }
         override fun onUpgrade(db: SQLiteDatabase, o: Int, n: Int) {
-            // Pre-release schema change: rebuild (the playlist is re-downloaded; nothing else is lost that matters yet).
+            if (o >= 2) {   // 2 -> 3: remember the series (parent) and episode label for Continue Watching
+                db.execSQL("ALTER TABLE recents ADD COLUMN parent TEXT"); db.execSQL("ALTER TABLE recents ADD COLUMN label TEXT"); return
+            }
             for (t in listOf("items", "items_fts", "favs", "recents", "livehist", "seen", "meta", "epg")) db.execSQL("DROP TABLE IF EXISTS $t")
             onCreate(db)
         }
@@ -54,7 +56,7 @@ object Db {
         logo = getString(4), url = getString(5) ?: "", year = if (isNull(6)) null else getInt(6),
         overview = getString(7), backdrop = getString(8), poster = getString(9),
         tvg = getString(10), rating = if (isNull(11)) null else getFloat(11), genres = getString(12),
-        posMs = if (extra) getLong(13) else 0, durMs = if (extra) getLong(14) else 0,
+        posMs = if (extra) getLong(13) else 0, durMs = if (extra) getLong(14) else 0, note = if (extra && columnCount > 15) getString(15) else null,
     )
 
     private fun query(sql: String, vararg args: String): List<Item> =
@@ -145,20 +147,28 @@ object Db {
     fun favorites(limit: Int = 200): List<Item> =
         query("SELECT $I_COLS FROM favs f JOIN items i ON i.url=f.url ORDER BY f.ts DESC LIMIT $limit")
 
-    fun saveProgress(url: String, pos: Long, dur: Long) {
+    fun saveProgress(url: String, pos: Long, dur: Long, parent: String? = null, label: String? = null) {
         val finished = dur > 0 && pos > dur * 0.95
         if (finished) { wr.delete("recents", "url=?", arrayOf(url)); return }
         wr.insertWithOnConflict("recents", null, ContentValues().apply {
-            put("url", url); put("pos", pos); put("dur", dur); put("ts", System.currentTimeMillis())
+            put("url", url); put("pos", pos); put("dur", dur); put("ts", System.currentTimeMillis()); put("parent", parent); put("label", label)
         }, SQLiteDatabase.CONFLICT_REPLACE)
     }
 
     fun progressOf(url: String): Long =
         rd.rawQuery("SELECT pos FROM recents WHERE url=?", arrayOf(url)).use { if (it.moveToFirst()) it.getLong(0) else 0L }
 
-    fun recents(limit: Int = 30): List<Item> = rd.rawQuery(
-        "SELECT $I_COLS, r.pos, r.dur FROM recents r JOIN items i ON i.url=r.url WHERE r.pos > 10000 ORDER BY r.ts DESC LIMIT $limit", null
-    ).use { c -> buildList { while (c.moveToNext()) add(c.item(extra = true)) } }
+    /** Continue Watching: movies and series (an episode shows as its series, with an "S1 E3" note), newest first, one per title. */
+    fun recents(limit: Int = 30): List<Item> {
+        val seen = HashSet<String>()
+        return rd.rawQuery(
+            "SELECT $I_COLS, r.pos, r.dur, r.label FROM recents r JOIN items i ON i.url=COALESCE(r.parent, r.url) WHERE r.pos > 10000 ORDER BY r.ts DESC LIMIT ${limit * 3}", null
+        ).use { c -> buildList { while (c.moveToNext()) { val it = c.item(extra = true); if (seen.add(it.url)) add(it) } } }.take(limit)
+    }
+
+    /** Last watched episode of a series: (episode url, label, position). */
+    fun lastEpisode(parent: String): Triple<String, String?, Long>? =
+        rd.rawQuery("SELECT url, label, pos FROM recents WHERE parent=? ORDER BY ts DESC LIMIT 1", arrayOf(parent)).use { if (it.moveToFirst()) Triple(it.getString(0), it.getString(1), it.getLong(2)) else null }
 
     fun touchLive(url: String) {
         wr.insertWithOnConflict("livehist", null, ContentValues().apply { put("url", url); put("ts", System.currentTimeMillis()) }, SQLiteDatabase.CONFLICT_REPLACE)
