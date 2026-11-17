@@ -59,6 +59,8 @@ interface Engine {
     fun disableText()
     fun textDisabled(): Boolean
     fun info(): StreamInfo
+    /** True when the stream has audio but this engine cannot decode any of it (e.g. MP2 on ExoPlayer): silent playback. */
+    fun audioUnsupported(): Boolean = false
     fun applySubtitleStyle()
     fun setAspect(mode: Int)
     /** Attach a downloaded SRT. [delayMs] is applied by re-timing (Exo) or the player's own delay (mpv). */
@@ -152,6 +154,11 @@ class ExoEngine(private val act: Activity, private val pv: PlayerView, private v
         val (g, i) = t.ref as Pair<androidx.media3.common.Tracks.Group, Int>
         val type = if (audio) C.TRACK_TYPE_AUDIO else C.TRACK_TYPE_TEXT
         p.trackSelectionParameters = p.trackSelectionParameters.buildUpon().setTrackTypeDisabled(type, false).setOverrideForType(TrackSelectionOverride(g.mediaTrackGroup, i)).build()
+    }
+
+    override fun audioUnsupported(): Boolean {
+        val g = p.currentTracks.groups.filter { it.type == C.TRACK_TYPE_AUDIO }
+        return g.isNotEmpty() && g.none { it.isSupported }
     }
 
     override fun disableText() { p.trackSelectionParameters = p.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true).build() }

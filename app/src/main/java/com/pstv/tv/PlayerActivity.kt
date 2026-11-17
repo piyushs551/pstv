@@ -135,6 +135,7 @@ class PlayerActivity : BaseActivity() {
         override fun onReady() {
             ready = true; retries = 0; spin.visibility = View.GONE
             ui.removeCallbacks(stallRun)
+            checkAudio()
             updateChips()
             engine?.let { e -> matchFrameRate(e.info().fps); e.setAspect(Prefs.aspect); e.applySubtitleStyle() }
         }
@@ -171,6 +172,14 @@ class PlayerActivity : BaseActivity() {
         e.playWhenReady = true
         e.setAspect(Prefs.aspect); e.applySubtitleStyle()
         ui.removeCallbacks(stallRun); ui.postDelayed(stallRun, 15_000)
+        ui.removeCallbacks(audioRun); ui.postDelayed(audioRun, 3_000)
+    }
+
+    /** Silent stream (e.g. MPEG-L2/MP2 audio, which the Fire TV decoder lacks): move to the other engine automatically. */
+    private val audioRun = Runnable { checkAudio() }
+    private fun checkAudio() {
+        val e = engine ?: return
+        if (ready && e.audioUnsupported() && Prefs.autoFallback && !fallbackUsed) switchEngine("audio format not supported by ${e.name} (e.g. MP2)")
     }
 
     /** Nothing playing 15 s after start: try the other engine (once), if allowed in Settings. */
