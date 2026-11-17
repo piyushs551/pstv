@@ -18,6 +18,11 @@ powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
 
 ## 2. Build and install
 
+If PowerShell says "running scripts is disabled", allow scripts for this window only (nothing permanent changes):
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
 ```powershell
 .\build.ps1                      # debug APK -> app\build\outputs\apk\debug\app-debug.apk
 .\install.ps1 -Ip 192.168.1.50   # your Fire TV's IP; add -Build to rebuild first
