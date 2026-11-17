@@ -1,6 +1,7 @@
 # Checks your Windows machine and installs what is missing. Asks before every install.
 # Run from PowerShell:  powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
 $ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"   # the progress bar makes Invoke-WebRequest downloads very slow in Windows PowerShell 5.1
 $sdk = "C:\Android\sdk"
 
 function Ask($msg) { (Read-Host "$msg [y/N]") -match '^(y|yes)$' }
