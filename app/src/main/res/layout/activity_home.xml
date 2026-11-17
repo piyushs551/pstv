@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:orientation="vertical">
+
+    <!-- Top bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="40dp"
+        android:paddingRight="40dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="28dp"
+            android:text="PSTV"
+            android:textColor="@color/accent"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView android:id="@+id/nav_home" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="8dp" android:text="Home" />
+        <TextView android:id="@+id/nav_search" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="8dp" android:text="Search" />
+        <TextView android:id="@+id/nav_settings" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Settings" />
+
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:gravity="right"
+            android:maxLines="1"
+            android:textColor="@color/text_dim"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- Hero banner -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="196dp"
+        android:clipChildren="false">
+
+        <ImageView android:id="@+id/hero_a" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" />
+        <ImageView android:id="@+id/hero_b" android:layout_width="match_parent" android:layout_height="match_parent" android:alpha="0" android:scaleType="centerCrop" />
+        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/scrim_left" />
+        <View android:layout_width="match_parent" android:layout_height="70dp" android:layout_gravity="bottom" android:background="@drawable/scrim_bottom" />
+
+        <LinearLayout
+            android:layout_width="480dp"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:paddingLeft="40dp">
+
+            <TextView android:id="@+id/hero_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="2" android:textColor="@color/text" android:textSize="28sp" android:textStyle="bold" />
+            <TextView android:id="@+id/hero_meta" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:maxLines="1" android:textColor="@color/text_dim" android:textSize="13sp" />
+            <TextView android:id="@+id/hero_desc" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:ellipsize="end" android:maxLines="3" android:textColor="@color/text" android:textSize="14sp" />
+
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:orientation="horizontal">
+                <TextView android:id="@+id/hero_play" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="10dp" android:text="▶  Play" />
+                <TextView android:id="@+id/hero_more" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="More Info" />
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rows"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipChildren="false"
+        android:clipToPadding="false" />
+</LinearLayout>
