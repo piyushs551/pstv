@@ -69,6 +69,8 @@ class SettingsActivity : BaseActivity() {
     }
 
     private fun mask(s: String) = if (s.isEmpty()) "Not set" else "••••••••"
+    /** "Built in" when the key comes from the build (keys.properties) and nothing is typed here. */
+    private fun keyLabel(user: String, built: String) = if (user.isNotEmpty()) "••••••••  (set here)" else if (built.isNotEmpty()) "Built in" else "Not set"
     private fun orNotSet(s: String) = s.ifEmpty { "Not set" }
 
     private fun build() {
@@ -115,7 +117,7 @@ class SettingsActivity : BaseActivity() {
         row("Home rows", { "Choose and reorder" }) { homeRowsDialog() }
 
         section("ARTWORK & PLOTS")
-        row("TMDB API key", { mask(Prefs.tmdbKey) }) { edit("TMDB API key (v3)", Prefs.tmdbKey, password = true) { Prefs.tmdbKey = it; Prefs.trendingAt = 0 } }
+        row("TMDB API key", { keyLabel(Prefs.tmdbKeyUser, BuildConfig.TMDB_KEY) }) { edit("TMDB API key (v3). Leave empty to use the built-in key", Prefs.tmdbKeyUser, password = true) { Prefs.tmdbKeyUser = it; Prefs.trendingAt = 0 } }
         row("Image cache size", { "${Prefs.cacheMb} MB   (used ${Images.diskBytes() / 1_048_576} MB)" }) {
             choose("Image cache size", listOf("50 MB" to 50, "100 MB" to 100, "200 MB" to 200, "500 MB" to 500), Prefs.cacheMb) { Prefs.cacheMb = it; Images.rebuild() }
         }
@@ -134,9 +136,9 @@ class SettingsActivity : BaseActivity() {
         row("Auto fallback", { if (Prefs.autoFallback) "On: if a stream errors or shows nothing for 15 s, retry it with the other engine" else "Off" }) { Prefs.autoFallback = !Prefs.autoFallback }
         row("Match framerate", { if (Prefs.matchFps) "On (asks the TV for a matching refresh rate if it offers one)" else "Off" }) { Prefs.matchFps = !Prefs.matchFps }
         section("SUBTITLES")
-        row("OpenSubtitles API key", { mask(Prefs.osKey) }) { edit("OpenSubtitles API key", Prefs.osKey, password = true) { Prefs.osKey = it } }
-        row("OpenSubtitles username", { orNotSet(Prefs.osUser) }) { edit("OpenSubtitles username", Prefs.osUser) { Prefs.osUser = it } }
-        row("OpenSubtitles password", { mask(Prefs.osPass) }) { edit("OpenSubtitles password", Prefs.osPass, password = true) { Prefs.osPass = it } }
+        row("OpenSubtitles API key", { keyLabel(Prefs.osKeyUser, BuildConfig.OS_KEY) }) { edit("OpenSubtitles API key. Leave empty to use the built-in key", Prefs.osKeyUser, password = true) { Prefs.osKeyUser = it } }
+        row("OpenSubtitles username", { if (Prefs.osUserUser.isNotEmpty()) Prefs.osUserUser else if (BuildConfig.OS_USER.isNotEmpty()) "Built in" else "Not set" }) { edit("OpenSubtitles username. Leave empty to use the built-in one", Prefs.osUserUser) { Prefs.osUserUser = it } }
+        row("OpenSubtitles password", { keyLabel(Prefs.osPassUser, BuildConfig.OS_PASS) }) { edit("OpenSubtitles password. Leave empty to use the built-in one", Prefs.osPassUser, password = true) { Prefs.osPassUser = it } }
         row("Subtitle language", { Prefs.subLang }) { edit("Language code (e.g. en, es, fr)", Prefs.subLang) { Prefs.subLang = it.lowercase().ifEmpty { "en" } } }
         row("Subtitle size", { "${Prefs.subSize}%" }) { choose("Subtitle size", listOf(75, 100, 125, 150, 200).map { "$it%" to it }, Prefs.subSize) { Prefs.subSize = it } }
         row("Subtitle colour", { colorName(Prefs.subColor) }) { choose("Subtitle colour", colors, Prefs.subColor) { Prefs.subColor = it } }

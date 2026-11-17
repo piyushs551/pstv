@@ -10,6 +10,7 @@ Original-brand IPTV player for Android TV / Amazon Fire TV. Plays ONLY the user'
 - Ask before installs on the user's machine and before preference-dependent choices. Tell them before each install.
 - Everything configurable lives in Settings (not hard-coded). New behaviour = new Settings row.
 - Commit to git after each stage and update PROGRESS.md in the same commit; push to `main`.
+- API keys (TMDB, OpenSubtitles) are baked in at build time from git-ignored `keys.properties` / `PSTV_*` env vars (`scripts\set-keys.ps1`); Settings only overrides. Never commit or ask the user to paste keys in chat.
 - Do not put the user's email, IP addresses, playlist URLs or keys in the repo, commits or external requests.
 - Never claim something works on the Fire TV unless it was run there; say "built / previewed only".
 - Screenshots of each screen before calling a stage done (Robolectric previews are acceptable, label them as previews).

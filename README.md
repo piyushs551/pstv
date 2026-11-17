@@ -39,7 +39,8 @@ On the Fire TV: Settings > My Fire TV > Developer Options > **ADB debugging ON**
 
 Settings (top bar) > pick **Source type**, enter the **M3U URL** or **Xtream server / username / password** > **Refresh playlist now**. After the first download it refreshes in the background every 6 hours and shows its status in the top bar.
 
-### API keys (both are yours, entered in Settings; nothing is baked in)
+### API keys (baked in at build time; you do not type them on the TV)
+Run `powershell -ExecutionPolicy Bypass -File scripts\set-keys.ps1` once. It writes `keys.properties` (git-ignored) and the next build includes the keys. Settings shows "Built in" and lets you override. Do not share the APK: the keys can be extracted from it.
 - **TMDB**: free key at themoviedb.org (Settings > API, use the v3 "API Key"). Gives trending, posters, backdrops and plots. Only titles that exist in your playlist are shown.
 - **OpenSubtitles**: API key from opensubtitles.com (Consumers), plus your account username/password (the API requires a login to download).
 

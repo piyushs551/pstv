@@ -19,10 +19,15 @@ object Prefs {
     var xUser: String get() = s("xuser"); set(v) = put("xuser", v.trim())
     var xPass: String get() = s("xpass"); set(v) = put("xpass", v.trim())
 
-    var tmdbKey: String get() = s("tmdb"); set(v) = put("tmdb", v.trim())
-    var osKey: String get() = s("oskey"); set(v) = put("oskey", v.trim())
-    var osUser: String get() = s("osuser"); set(v) = put("osuser", v.trim())
-    var osPass: String get() = s("ospass"); set(v) = put("ospass", v)
+    // Keys: a value typed in Settings wins; otherwise the key baked in at build time (keys.properties) is used.
+    var tmdbKeyUser: String get() = s("tmdb"); set(v) = put("tmdb", v.trim())
+    var osKeyUser: String get() = s("oskey"); set(v) = put("oskey", v.trim())
+    var osUserUser: String get() = s("osuser"); set(v) = put("osuser", v.trim())
+    var osPassUser: String get() = s("ospass"); set(v) = put("ospass", v)
+    val tmdbKey: String get() = tmdbKeyUser.ifEmpty { BuildConfig.TMDB_KEY }
+    val osKey: String get() = osKeyUser.ifEmpty { BuildConfig.OS_KEY }
+    val osUser: String get() = osUserUser.ifEmpty { BuildConfig.OS_USER }
+    val osPass: String get() = osPassUser.ifEmpty { BuildConfig.OS_PASS }
     var subLang: String get() = s("sublang", "en"); set(v) = put("sublang", v.trim())
 
     /** Seek step in seconds: 5, 10, 30 or 60. */

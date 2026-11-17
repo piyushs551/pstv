@@ -1,9 +1,18 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
+
+// API keys are baked in at build time from keys.properties (git-ignored) or PSTV_* environment variables.
+// Create the file with scripts\set-keys.ps1. Nothing secret is ever committed.
+val keyProps = Properties().also { p ->
+    rootProject.file("keys.properties").takeIf { it.exists() }?.inputStream()?.use { p.load(it) }
+}
+fun keyOf(name: String): String =
+    (keyProps.getProperty(name) ?: System.getenv("PSTV_" + name.uppercase()) ?: "").trim().replace("\\", "\\\\").replace("\"", "\\\"")
 
 android {
     namespace = "com.pstv.tv"
@@ -16,6 +25,10 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         resourceConfigurations += "en"   // drop library translations (smaller APK)
+        buildConfigField("String", "TMDB_KEY", "\"${keyOf("tmdb")}\"")
+        buildConfigField("String", "OS_KEY", "\"${keyOf("os_key")}\"")
+        buildConfigField("String", "OS_USER", "\"${keyOf("os_user")}\"")
+        buildConfigField("String", "OS_PASS", "\"${keyOf("os_pass")}\"")
         ndk { abiFilters += (project.findProperty("pstv.abi") as String? ?: "armeabi-v7a").split(",") }
     }
 
@@ -33,6 +46,8 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    buildFeatures { buildConfig = true }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
