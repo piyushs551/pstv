@@ -37,4 +37,5 @@ Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending 
 - Home rows: curated (recent, trending, favorites, recent live, recently added); group rows live under Movies / TV shows / Live tab.
 
 ## Open risks / unverified on device
+- MPV: user reported manual switch to MPV on a live channel stayed loading then the app dropped to Home (native crash suspected on Fire OS 6 / API 25). Crash guard added (Prefs.mpvPending/mpvBroken). Need `adb logcat -b crash -d` to find the cause. MP2 live audio is silent on ExoPlayer; alternative fix = FFmpeg audio decoder extension for Media3 (NextLib) instead of MPV.
 - Everything: nothing has run on a Fire TV yet. MPV on API 25. Match framerate on Fire OS. EPG matching depends on provider tvg-id/epg_channel_id. RAM <150 MB unmeasured.

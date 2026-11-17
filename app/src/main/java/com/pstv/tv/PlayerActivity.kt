@@ -134,6 +134,7 @@ class PlayerActivity : BaseActivity() {
         override fun onBuffering(buffering: Boolean) { spin.visibility = if (buffering) View.VISIBLE else View.GONE }
         override fun onReady() {
             ready = true; retries = 0; spin.visibility = View.GONE
+            if (engine is MpvEngine) Prefs.mpvPending = false
             ui.removeCallbacks(stallRun)
             checkAudio()
             updateChips()
@@ -145,7 +146,8 @@ class PlayerActivity : BaseActivity() {
     }
 
     private fun createEngine(kindName: String): Engine {
-        if (kindName == "mpv") {
+        if (kindName == "mpv" && Prefs.mpvBroken) toast("MPV is switched off: the app crashed while it was running. Re-enable it in Settings > Player.")
+        else if (kindName == "mpv") {
             try { return MpvEngine(this, root, pv, isLive) }
             catch (t: Throwable) { toast("MPV could not start on this device (${t.javaClass.simpleName}). Using ExoPlayer."); fallbackUsed = true }
         }
@@ -193,8 +195,9 @@ class PlayerActivity : BaseActivity() {
 
     /** Move this stream to the other engine at the current position. */
     private fun switchEngine(reason: String) {
-        fallbackUsed = true
         val toMpv = engine !is MpvEngine
+        if (toMpv && Prefs.mpvBroken) { toast("MPV is switched off after a crash. Re-enable it in Settings > Player."); return }
+        fallbackUsed = true
         val pos = if (isLive) 0 else (engine?.position ?: resumeMs)
         toast("Switching to ${if (toMpv) "MPV" else "ExoPlayer"}: $reason")
         engine?.let { runCatching { it.release() } }

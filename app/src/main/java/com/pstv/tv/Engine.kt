@@ -234,6 +234,7 @@ class MpvEngine(private val ctx: Context, private val root: FrameLayout, private
     override val name = "MPV"
     override var listener: Engine.Listener? = null
     private val main = Handler(Looper.getMainLooper())
+    private val guard = run { Prefs.mpvPending = true }     // cleared on first picture / clean release (see PlayerActivity, release())
     private val mpv: MPVLib = MPVLib.create(ctx) ?: throw IllegalStateException("libmpv failed to create")
     private val surface = SurfaceView(ctx)
     private var surfaceReady = false
@@ -379,6 +380,7 @@ class MpvEngine(private val ctx: Context, private val root: FrameLayout, private
     override fun release() {
         if (released) return
         released = true
+        Prefs.mpvPending = false
         main.removeCallbacksAndMessages(null)
         runCatching { mpv.removeObserver(observer) }
         runCatching { mpv.setPropertyString("vo", "null") }

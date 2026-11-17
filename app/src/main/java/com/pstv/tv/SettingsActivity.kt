@@ -136,6 +136,7 @@ class SettingsActivity : BaseActivity() {
         row("Rewind step", { "${Prefs.rwStep} seconds" }) { choose("Rewind step", listOf(5, 10, 30, 60).map { "$it seconds" to it }, Prefs.rwStep) { Prefs.rwStep = it } }
 
         section("PLAYER · BOTH")
+        row("MPV engine status", { if (Prefs.mpvBroken) "Switched off: the app crashed while MPV was running. Tap to re-enable and try again" else "Available" }) { Prefs.mpvBroken = false; Prefs.mpvPending = false }
         row("Auto fallback", { if (Prefs.autoFallback) "On: if a stream errors or shows nothing for 15 s, retry it with the other engine" else "Off" }) { Prefs.autoFallback = !Prefs.autoFallback }
         row("Match framerate", { if (Prefs.matchFps) "On (asks the TV for a matching refresh rate if it offers one)" else "Off" }) { Prefs.matchFps = !Prefs.matchFps }
         section("SUBTITLES")
