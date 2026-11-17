@@ -5,7 +5,7 @@
 param(
     [Parameter(Mandatory = $true)][string]$Ip,
     [string]$Package,
-    [string]$Out = "C:\iptv\reference",
+    [string]$Out = (Join-Path $PSScriptRoot "..\reference\captures"),
     [switch]$Interactive
 )
 $ErrorActionPreference = "Stop"

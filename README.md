@@ -6,11 +6,11 @@ Target: Fire TV Stick 4K (1st gen), Fire OS 6.7.1.1 (Android 7.1 / API 25). minS
 
 ## 1. Set up your Windows machine
 
-Project folder: `C:\iptv` (no spaces, not in OneDrive).
+Project folder: `C:\claude\projects\pstv` (no spaces, not in OneDrive).
 
 ```powershell
-git clone https://github.com/piyushs551/pstv C:\iptv
-cd C:\iptv
+git clone https://github.com/piyushs551/pstv C:\claude\projects\pstv
+cd C:\claude\projects\pstv
 powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
 ```
 

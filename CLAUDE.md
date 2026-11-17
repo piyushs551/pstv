@@ -16,7 +16,7 @@ Original-brand IPTV player for Android TV / Amazon Fire TV. Plays ONLY the user'
 
 ## Target device
 Fire TV Stick 4K (1st gen), Fire OS 6.7.1.1 = Android 7.1 (API 25), ~1.5 GB RAM, ~2.4 GB free, 32-bit (`armeabi-v7a`; verify with `adb shell getprop ro.product.cpu.abilist`). D-pad remote only. Budgets: app RAM < ~150 MB, hardware decoding, 4K HEVC playable. APK target ~12 MB originally; with mpv it is ~15 MB (accepted tradeoff, user informed).
-User machine: Windows laptop, project in `C:\iptv`. Scripts: `scripts\setup.ps1`, `build.ps1`, `install.ps1`, `scripts\capture-reference.ps1` (untested on Windows).
+User machine: Windows laptop, project in `C:\claude\projects\pstv`. Scripts: `scripts\setup.ps1`, `build.ps1`, `install.ps1`, `scripts\capture-reference.ps1` (untested on Windows).
 
 ## Stack
 Kotlin 2.2.10 (needed by libmpv), AGP 8.5.2, Gradle 8.9 wrapper, classic Views + RecyclerView (no Compose), Media3 ExoPlayer 1.4.1 (core, hls, ui, okhttp), libmpv 1.1.0 (`dev.jdtech.mpv`), Coil 2 (`io.coil-kt:coil`), OkHttp, built-in `JsonReader`/`org.json`, SQLite (FTS4). minSdk 25, targetSdk 34, R8 + resource shrink on in debug too.
