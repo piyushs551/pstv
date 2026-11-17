@@ -35,6 +35,7 @@ private val yearParen = Regex("""[(\[]((?:19|20)\d{2})[)\]]""")
 private val yearTail = Regex("""\s((?:19|20)\d{2})$""")
 private val brackets = Regex("""\[[^\]]*]|\([^)]*\)""")
 private val prefix = Regex("""^[a-z]{2,3}\s*[|:\-]\s+""")
+private val noiseTokens = setOf("hd", "uhd", "fhd", "4k", "8k", "1080p", "720p", "480p", "2160p", "cam", "hdcam", "hdrip", "webrip", "webdl", "dvdrip", "bluray", "brrip", "hdr", "hevc", "x264", "x265")
 private val nonAlnum = Regex("""[^a-z0-9]+""")
 
 /** Lower-case title without tags, year or country prefix, for matching against TMDB. */
@@ -43,7 +44,7 @@ fun normTitle(raw: String): String {
     s = prefix.replace(s, "")
     s = brackets.replace(s, " ")
     s = nonAlnum.replace(s, " ").trim()
-    return s
+    return s.split(' ').filter { it !in noiseTokens }.joinToString(" ")
 }
 
 fun yearOf(raw: String): Int? =

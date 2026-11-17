@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
+import kotlinx.coroutines.launch
 
 class SettingsActivity : BaseActivity() {
     private lateinit var list: LinearLayout
@@ -121,6 +122,7 @@ class SettingsActivity : BaseActivity() {
 
         section("ARTWORK & PLOTS")
         row("TMDB API key", { keyLabel(Prefs.tmdbKeyUser, BuildConfig.TMDB_KEY) }) { edit("TMDB API key (v3). Leave empty to use the built-in key", Prefs.tmdbKeyUser, password = true) { Prefs.tmdbKeyUser = it; Prefs.trendingAt = 0 } }
+        row("Test TMDB key", { "Checks that TMDB accepts the key" }) { toast("Checking…"); Repo.scope.launch { val m = Tmdb.test(); runOnUiThread { toast(m) } } }
         row("Image cache size", { "${Prefs.cacheMb} MB   (used ${Images.diskBytes() / 1_048_576} MB)" }) {
             choose("Image cache size", listOf("50 MB" to 50, "100 MB" to 100, "200 MB" to 200, "500 MB" to 500), Prefs.cacheMb) { Prefs.cacheMb = it; Images.rebuild() }
         }
@@ -155,7 +157,7 @@ class SettingsActivity : BaseActivity() {
     }
 
     private val rowNames = linkedMapOf(
-        "recent" to "Continue Watching", "trendm" to "Today's trending movies", "trends" to "Today's trending series", "favs" to "Favorites",
+        "recent" to "Continue Watching", "trendm" to "Today's trending movies", "trends" to "Today's trending series", "popm" to "Popular movies", "pops" to "Popular series", "topm" to "Top rated movies", "tops" to "Top rated series", "favs" to "Favorites",
         "livehist" to "Recently watched channels", "newm" to "Recently added (movies)", "news" to "Recently added (series)",
     )
 

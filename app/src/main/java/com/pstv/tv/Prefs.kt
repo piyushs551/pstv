@@ -75,7 +75,14 @@ object Prefs {
     var epgOnlyWithData: Boolean get() = i("epgonly", 1) == 1; set(v) = put("epgonly", if (v) 1 else 0)
     var epgLast: Long get() = sp.getLong("epglast", 0); set(v) = sp.edit().putLong("epglast", v).apply()
 
-    const val DEFAULT_ROWS = "recent,trendm,trends,favs,livehist,newm,news"
+    const val DEFAULT_ROWS = "recent,trendm,trends,popm,pops,topm,tops,favs,livehist,newm,news"
+
+    fun rawGet(k: String) = sp.getString(k, "") ?: ""
+    fun rawPut(k: String, v: String) = sp.edit().putString(k, v).apply()
+    fun rawGetLong(k: String) = sp.getLong(k, 0)
+    fun rawPutLong(k: String, v: Long) = sp.edit().putLong(k, v).apply()
+    /** Bumped when title normalisation changes, which needs a playlist re-import. */
+    var normVersion: Int get() = i("normv", 0); set(v) = put("normv", v)
 
     val hasSource: Boolean
         get() = if (sourceType == "xtream") xHost.isNotEmpty() && xUser.isNotEmpty() else m3uUrl.isNotEmpty()

@@ -46,6 +46,18 @@ object Images {
         old?.shutdown()
     }
 
+    /** True if a (logo) bitmap is mostly dark/transparent, so it needs a light backing to be visible. */
+    fun isDark(b: android.graphics.Bitmap): Boolean {
+        val s = android.graphics.Bitmap.createScaledBitmap(b, 8, 8, true)
+        var sum = 0.0; var wsum = 0.0
+        for (x in 0 until 8) for (y in 0 until 8) {
+            val p = s.getPixel(x, y); val a = android.graphics.Color.alpha(p) / 255.0
+            val l = (0.299 * android.graphics.Color.red(p) + 0.587 * android.graphics.Color.green(p) + 0.114 * android.graphics.Color.blue(p)) / 255.0
+            sum += l * a; wsum += a
+        }
+        return wsum < 1.0 || sum / wsum < 0.45
+    }
+
     fun diskBytes(): Long = loader.diskCache?.size ?: 0L
 
     fun clear() {
@@ -54,7 +66,7 @@ object Images {
     }
 
     /** Size-matched load into a card. Re-binding the same view cancels the previous request. */
-    fun card(v: ImageView, url: String?, name: String, w: Int, h: Int, icon: Int = 0) {
+    fun card(v: ImageView, url: String?, name: String, w: Int, h: Int, icon: Int = 0, onBitmap: ((android.graphics.Bitmap) -> Unit)? = null) {
         val tile = NameTile(name, v.context, icon)
         if (url.isNullOrBlank()) { v.setImageDrawable(tile); return }
         v.load(url, loader) {
@@ -63,6 +75,7 @@ object Images {
             placeholder(tile)
             error(tile)
             fallback(tile)
+            if (onBitmap != null) listener(onSuccess = { _, r -> (r.drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap?.let(onBitmap) })
         }
     }
 

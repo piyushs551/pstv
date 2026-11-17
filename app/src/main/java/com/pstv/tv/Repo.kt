@@ -22,8 +22,11 @@ object Repo {
     private fun notifyChanged() = main.post { listeners.forEach { it() } }
     private fun updateStatus(s: String) { status = s; notifyChanged() }
 
+    const val NORM_V = 2
+
     fun refreshIfStale() {
         if (!Prefs.hasSource) return
+        if (Prefs.normVersion != NORM_V) { Prefs.normVersion = NORM_V; refresh(); return }   // titles are matched differently now: re-import once
         if (Db.count() == 0 || (Prefs.refreshHours > 0 && System.currentTimeMillis() - Prefs.lastRefresh > Prefs.refreshHours * 3_600_000L)) refresh()
         Epg.refreshIfStale()
     }

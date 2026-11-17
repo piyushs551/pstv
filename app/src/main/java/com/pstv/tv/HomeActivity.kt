@@ -42,6 +42,7 @@ class HomeActivity : BaseActivity(), CardHost {
     private var chromeShown = true
     private var appliedScale = 0
     private var curRow = 0
+    private var appliedKey = ""
     private lateinit var drawer: RecyclerView
 
     private val repoListener: () -> Unit = {
@@ -52,7 +53,7 @@ class HomeActivity : BaseActivity(), CardHost {
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         setContentView(R.layout.activity_home)
-        appliedScale = Prefs.uiScale
+        appliedScale = Prefs.uiScale; appliedKey = Prefs.tmdbKey
         drawer = findViewById(R.id.drawer); drawer.layoutManager = LinearLayoutManager(this)
         tabs = findViewById(R.id.tabs); status = findViewById(R.id.status)
         rowsPage = findViewById(R.id.page_rows); livePageView = findViewById(R.id.page_live); epgPageView = findViewById(R.id.page_epg)
@@ -90,6 +91,7 @@ class HomeActivity : BaseActivity(), CardHost {
     override fun onStart() {
         super.onStart()
         if (appliedScale != Prefs.uiScale) { recreate(); return }
+        if (appliedKey != Prefs.tmdbKey) { appliedKey = Prefs.tmdbKey; showTab(tab, false); return }   // TMDB key added/changed in Settings
         repoListener()
         if (tab == 1) refreshPersonalRows()
     }
@@ -186,12 +188,20 @@ class HomeActivity : BaseActivity(), CardHost {
     private fun groupRows(kind: Kind) = Db.groups(kind).map { g -> RowDesc("g:${g.kind}:${g.name}", g.name) { o, l -> Db.page(g.kind, g.name, o, l) } }
 
     private fun trending(kind: Kind) = RowDesc(if (kind == Kind.MOVIE) "trendm" else "trends",
-        if (kind == Kind.MOVIE) "Today's trending movies" else "Today's trending series", ranked = true) { o, _ -> if (o == 0) Tmdb.trendingInPlaylist(kind) else emptyList() }
+        if (kind == Kind.MOVIE) "Today's trending movies" else "Today's trending series", ranked = true, lazy = true) { o, _ -> if (o == 0) Tmdb.trendingInPlaylist(kind) else emptyList() }
+    private fun popular(kind: Kind) = RowDesc(if (kind == Kind.MOVIE) "popm" else "pops",
+        if (kind == Kind.MOVIE) "Popular movies" else "Popular series", lazy = true) { o, _ -> if (o == 0) Tmdb.popularInPlaylist(kind) else emptyList() }
+    private fun topRated(kind: Kind) = RowDesc(if (kind == Kind.MOVIE) "topm" else "tops",
+        if (kind == Kind.MOVIE) "Top rated movies" else "Top rated series", ranked = true, lazy = true) { o, _ -> if (o == 0) Tmdb.topRatedInPlaylist(kind) else emptyList() }
 
     private fun homeRow(key: String): RowDesc? = when (key) {
         "recent" -> RowDesc("recent", "Continue Watching") { o, _ -> if (o == 0) Db.recents() else emptyList() }
         "trendm" -> if (Tmdb.enabled) trending(Kind.MOVIE) else null
         "trends" -> if (Tmdb.enabled) trending(Kind.SERIES) else null
+        "popm" -> if (Tmdb.enabled) popular(Kind.MOVIE) else null
+        "pops" -> if (Tmdb.enabled) popular(Kind.SERIES) else null
+        "topm" -> if (Tmdb.enabled) topRated(Kind.MOVIE) else null
+        "tops" -> if (Tmdb.enabled) topRated(Kind.SERIES) else null
         "favs" -> RowDesc("favs", "Favorites") { o, _ -> if (o == 0) Db.favorites() else emptyList() }
         "livehist" -> RowDesc("livehist", "Recently watched channels") { o, _ -> if (o == 0) Db.recentLive() else emptyList() }
         "newm" -> RowDesc("newm", "Recently added (movies)") { o, l -> Db.latest(Kind.MOVIE, o, l) }
@@ -206,11 +216,19 @@ class HomeActivity : BaseActivity(), CardHost {
                 val r = ArrayList<RowDesc>()
                 when (which) {
                     1 -> Prefs.homeRows.split(',').filter { it.isNotBlank() && !it.startsWith("!") }.forEach { k -> homeRow(k)?.let(r::add) }
-                    4 -> { if (Tmdb.enabled) r += trending(Kind.MOVIE); r += homeRow("newm")!!; r += groupRows(Kind.MOVIE) }
-                    else -> { if (Tmdb.enabled) r += trending(Kind.SERIES); r += homeRow("news")!!; r += groupRows(Kind.SERIES) }
+                    4 -> {
+                        r += RowDesc("recentm", "Continue watching") { o, _ -> if (o == 0) Db.recents(30, Kind.MOVIE) else emptyList() }
+                        if (Tmdb.enabled) { r += trending(Kind.MOVIE); r += popular(Kind.MOVIE); r += topRated(Kind.MOVIE) }
+                        r += homeRow("newm")!!; r += groupRows(Kind.MOVIE)
+                    }
+                    else -> {
+                        r += RowDesc("recents", "Continue watching") { o, _ -> if (o == 0) Db.recents(30, Kind.SERIES) else emptyList() }
+                        if (Tmdb.enabled) { r += trending(Kind.SERIES); r += popular(Kind.SERIES); r += topRated(Kind.SERIES) }
+                        r += homeRow("news")!!; r += groupRows(Kind.SERIES)
+                    }
                 }
                 // Empty non-lazy rows are hidden.
-                r.filter { it.ranked || it.load(0, 1).isNotEmpty() }.toMutableList()
+                r.filter { it.ranked || it.lazy || it.load(0, 1).isNotEmpty() }.toMutableList()
             }
             if (token != buildToken) return@launch
             rows = ArrayList(list)
@@ -219,17 +237,21 @@ class HomeActivity : BaseActivity(), CardHost {
         }
     }
 
+    /** After coming back from the player/Settings: update Continue Watching / Favorites / Recent channels, adding rows that were empty before. */
     private fun refreshPersonalRows() {
-        val a = adapter ?: return
-        val keys = listOf("recent", "favs", "livehist")
-        if (rows.none { it.key in keys }) return
+        if (tab != 1) return
         scope.launch {
-            for (r in rows.filter { it.key in keys }) {
-                val fresh = withContext(Dispatchers.IO) { r.load(0, 60) }
-                if (fresh.isEmpty()) { onRowEmpty(r); continue }
-                r.items.clear(); r.items.addAll(fresh); r.done = true; r.started = true
-                a.notifyItemChanged(rows.indexOf(r))
+            var rebuild = false
+            for (k in listOf("recent", "favs", "livehist")) {
+                if (!Prefs.homeRows.split(',').contains(k)) continue          // hidden in Settings
+                val row = rows.find { it.key == k }
+                val fresh = withContext(Dispatchers.IO) { homeRow(k)?.load(0, 60).orEmpty() }
+                if (row == null) { if (fresh.isNotEmpty()) rebuild = true; continue }
+                if (fresh.isEmpty()) { onRowEmpty(row); continue }
+                row.items.clear(); row.items.addAll(fresh); row.done = true; row.started = true
+                adapter?.notifyItemChanged(rows.indexOf(row))
             }
+            if (rebuild) buildRows(1, false)
         }
     }
 

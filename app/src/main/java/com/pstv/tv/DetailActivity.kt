@@ -22,6 +22,8 @@ class DetailActivity : BaseActivity() {
     private var episodes: List<Xtream.Episode> = emptyList()
     private var season = 0
     private val shown = ArrayList<Xtream.Episode>()
+    private val tmdbDone = HashSet<Int>()
+    private var epAdapter: RecyclerView.Adapter<RecyclerView.ViewHolder>? = null
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
@@ -83,11 +85,27 @@ class DetailActivity : BaseActivity() {
         }
     }
 
+    /** Dropdown right under the Season button (not a centred dialog). */
     private fun pickSeason() {
         val seasons = episodes.map { it.season }.distinct().sorted()
         if (seasons.isEmpty()) return
-        AlertDialog.Builder(this, R.style.Theme_Pstv_Dialog).setTitle("Season")
-            .setSingleChoiceItems(seasons.map { "Season $it" }.toTypedArray(), seasons.indexOf(season)) { d, i -> season = seasons[i]; d.dismiss(); showSeason(focusList = true) }.show()
+        val popup = android.widget.ListPopupWindow(this)
+        popup.anchorView = findViewById(R.id.season_btn)
+        popup.width = dp(this, 210); popup.isModal = true
+        popup.setBackgroundDrawable(getDrawable(R.drawable.frost_panel))
+        popup.setAdapter(object : android.widget.BaseAdapter() {
+            override fun getCount() = seasons.size
+            override fun getItem(i: Int) = seasons[i]
+            override fun getItemId(i: Int) = i.toLong()
+            override fun getView(i: Int, v: View?, p: ViewGroup): View = (v as? TextView ?: TextView(p.context)).apply {
+                text = (if (seasons[i] == season) "✓   " else "     ") + "Season ${seasons[i]}"
+                setTextColor(getColor(R.color.text)); type(R.dimen.type_body); setPadding(dp(context, 14), dp(context, 10), dp(context, 14), dp(context, 10))
+            }
+        })
+        popup.setOnItemClickListener { _, _, i, _ -> season = seasons[i]; popup.dismiss(); showSeason(focusList = true) }
+        popup.show()
+        popup.listView?.apply { selector = getDrawable(R.drawable.row_bg); divider = null }
+        popup.setSelection(seasons.indexOf(season).coerceAtLeast(0))
     }
 
     private fun showSeason(focusList: Boolean = false) {
@@ -124,6 +142,18 @@ class DetailActivity : BaseActivity() {
                 v.setOnClickListener { playEpisode(e) }
             }
         }
+        @Suppress("UNCHECKED_CAST") run { epAdapter = list.adapter as RecyclerView.Adapter<RecyclerView.ViewHolder> }
         if (focusList) list.post { list.getChildAt(0)?.requestFocus() }
+        // Episode stills, titles and plots from TMDB (the provider often has none): fetched once per season.
+        if (Tmdb.enabled && tmdbDone.add(season)) {
+            val sNow = season
+            scope.launch {
+                val m = withContext(Dispatchers.IO) { runCatching { Tmdb.seasonEpisodes(item, sNow) }.getOrDefault(emptyMap()) }
+                if (m.isEmpty()) return@launch
+                episodes = episodes.map { e -> if (e.season != sNow) e else m[e.number]?.let { md ->
+                    e.copy(title = md.name ?: e.title, image = md.still ?: e.image, plot = md.overview ?: e.plot, duration = e.duration ?: md.runtime?.let { "$it min" }) } ?: e }
+                if (season == sNow) { shown.clear(); shown.addAll(episodes.filter { it.season == sNow }); epAdapter?.notifyDataSetChanged(); shown.firstOrNull()?.let { info(it) } }
+            }
+        }
     }
 }

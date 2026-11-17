@@ -30,6 +30,13 @@ Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending 
 - Preview caveats: Robolectric does not apply outline clipping (cards look square) or focus; both work on device by design but are UNVERIFIED on the Fire TV.
 - Fonts: Outfit installed by re-pointing the Android 7 system font map via reflection (Fonts.kt); falls back to system fonts if blocked.
 
+## Fixes after on-device feedback (round 2)
+- TMDB rows: trending + popular + top rated (movies/series), matched to playlist (also original title, quality tags stripped from titles; playlist re-imports once, Repo.NORM_V). Home rebuilds when the TMDB key changes. Settings > "Test TMDB key".
+- Continue Watching: rows empty at load are added later (refreshPersonalRows); Movies/TV tabs get their own Continue watching row. NOTE watch history saved before the Db v3 update has no series link and cannot show.
+- Series page: Season is a dropdown popup under the button; episode stills/titles/plots from TMDB (Tmdb.seasonEpisodes).
+- Blank logo cards: light backing is chosen from the logo's luminance (Images.isDark).
+- TODO still: Settings screen to reorder/hide category rows per tab.
+
 ## Decisions
 - API keys (TMDB, OpenSubtitles key+login) are baked in at build time from git-ignored keys.properties via scripts\set-keys.ps1; Settings shows "Built in" and can override. Replaces the earlier "user types keys in Settings".
 - Font: Outfit (rounded sans). Icons: Material Symbols Rounded from npm `@material-symbols/svg-400`, converted to vector drawables.
