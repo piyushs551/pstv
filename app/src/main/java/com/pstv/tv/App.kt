@@ -23,6 +23,13 @@ class App : Application() {
 }
 
 open class BaseActivity : Activity() {
+    /** Applies Settings > UI size by scaling the screen density; the whole layout (dp/sp) follows. */
+    override fun attachBaseContext(base: Context) {
+        val cfg = android.content.res.Configuration(base.resources.configuration)
+        cfg.densityDpi = (cfg.densityDpi * Prefs.uiScale / 100f).toInt().coerceAtLeast(80)
+        super.attachBaseContext(base.createConfigurationContext(cfg))
+    }
+
     /** Cancelled with the screen; use for UI-bound coroutines. */
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     override fun onDestroy() { scope.cancel(); super.onDestroy() }

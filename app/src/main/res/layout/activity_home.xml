@@ -14,31 +14,31 @@
         <FrameLayout
             android:id="@+id/hero_area"
             android:layout_width="match_parent"
-            android:layout_height="280dp">
+            android:layout_height="236dp">
 
             <ImageView android:id="@+id/hero_a" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" />
             <ImageView android:id="@+id/hero_b" android:layout_width="match_parent" android:layout_height="match_parent" android:alpha="0" android:scaleType="centerCrop" />
             <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/scrim_left" />
-            <View android:layout_width="match_parent" android:layout_height="110dp" android:layout_gravity="bottom" android:background="@drawable/scrim_bottom" />
+            <View android:layout_width="match_parent" android:layout_height="90dp" android:layout_gravity="bottom" android:background="@drawable/scrim_bottom" />
 
             <LinearLayout
-                android:layout_width="520dp"
+                android:layout_width="480dp"
                 android:layout_height="match_parent"
                 android:gravity="bottom"
                 android:orientation="vertical"
-                android:paddingBottom="12dp"
-                android:paddingLeft="@dimen/safe_h">
+                android:paddingBottom="10dp"
+                android:paddingLeft="@dimen/content_start">
 
-                <TextView android:id="@+id/hero_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="2" android:textColor="@color/text" android:textSize="@dimen/type_display" android:fontFamily="@string/font_strong" />
-                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:orientation="horizontal">
+                <TextView android:id="@+id/hero_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:fontFamily="@string/font_strong" android:maxLines="2" android:textColor="@color/text" android:textSize="@dimen/type_headline" />
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:orientation="horizontal">
                     <TextView android:id="@+id/hero_c1" style="@style/Chip" android:layout_width="wrap_content" android:layout_height="wrap_content" />
                     <TextView android:id="@+id/hero_c2" style="@style/Chip" android:layout_width="wrap_content" android:layout_height="wrap_content" />
                     <TextView android:id="@+id/hero_c3" style="@style/Chip" android:layout_width="wrap_content" android:layout_height="wrap_content" />
                 </LinearLayout>
-                <TextView android:id="@+id/hero_desc" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:ellipsize="end" android:maxLines="3" android:textColor="@color/text" android:textSize="@dimen/type_caption" />
-                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
-                    <TextView android:id="@+id/hero_play" style="@style/BtnPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="10dp" android:paddingBottom="7dp" android:paddingTop="7dp" android:drawableLeft="@drawable/ic_play" android:text="Play" />
-                    <TextView android:id="@+id/hero_more" style="@style/Btn" android:drawableLeft="@drawable/ic_info" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingBottom="7dp" android:paddingTop="7dp" android:text="More Info" />
+                <TextView android:id="@+id/hero_desc" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:ellipsize="end" android:maxLines="3" android:textColor="@color/text" android:textSize="@dimen/type_caption" />
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="9dp" android:orientation="horizontal">
+                    <TextView android:id="@+id/hero_play" style="@style/BtnPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="8dp" android:drawableLeft="@drawable/ic_play" android:paddingBottom="5dp" android:paddingTop="5dp" android:text="Play" />
+                    <TextView android:id="@+id/hero_more" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:drawableLeft="@drawable/ic_info" android:paddingBottom="5dp" android:paddingTop="5dp" android:text="More Info" />
                 </LinearLayout>
             </LinearLayout>
         </FrameLayout>
@@ -58,7 +58,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="horizontal"
-        android:paddingTop="84dp"
+        android:paddingTop="64dp"
         android:visibility="gone">
 
         <androidx.recyclerview.widget.RecyclerView
@@ -67,7 +67,7 @@
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:paddingBottom="20dp"
-            android:paddingLeft="@dimen/safe_h"
+            android:paddingLeft="@dimen/content_start"
             android:paddingRight="12dp" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -78,8 +78,8 @@
             android:clipChildren="false"
             android:clipToPadding="false"
             android:paddingBottom="20dp"
-            android:paddingRight="@dimen/safe_h"
             android:paddingLeft="12dp"
+            android:paddingRight="@dimen/safe_h"
             android:paddingTop="8dp" />
     </LinearLayout>
 
@@ -89,7 +89,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:paddingTop="84dp"
+        android:paddingTop="64dp"
         android:visibility="gone">
 
         <FrameLayout android:id="@+id/epg_head" android:layout_width="match_parent" android:layout_height="26dp" />
@@ -109,23 +109,38 @@
             android:clipChildren="false" />
     </LinearLayout>
 
-    <!-- Tab bar (TV-safe margins) -->
+    <!-- Left icon rail: Search, Favorites, Settings -->
+    <LinearLayout
+        android:id="@+id/rail"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="left"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:paddingLeft="16dp"
+        android:paddingRight="8dp">
+        <ImageView android:id="@+id/rail_search" style="@style/Rail" android:src="@drawable/ic_search" />
+        <ImageView android:id="@+id/rail_fav" style="@style/Rail" android:src="@drawable/ic_fav" />
+        <ImageView android:id="@+id/nav_settings" style="@style/Rail" android:src="@drawable/ic_settings" />
+    </LinearLayout>
+
+    <!-- Slim top menu (tab 0 is a hidden placeholder; Search lives in the rail) -->
     <LinearLayout
         android:id="@+id/tabs"
         android:layout_width="match_parent"
-        android:layout_height="76dp"
+        android:layout_height="64dp"
         android:gravity="top"
         android:orientation="horizontal"
-        android:paddingLeft="@dimen/safe_h"
+        android:paddingLeft="@dimen/content_start"
         android:paddingRight="@dimen/safe_h"
         android:paddingTop="@dimen/safe_v">
 
-        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="6dp" android:drawableLeft="@drawable/ic_search" android:text="Search" />
-        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="6dp" android:drawableLeft="@drawable/ic_home" android:text="Home" />
-        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="6dp" android:drawableLeft="@drawable/ic_live" android:text="Live" />
-        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="6dp" android:drawableLeft="@drawable/ic_epg" android:text="EPG" />
-        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="6dp" android:drawableLeft="@drawable/ic_movies" android:text="Movies" />
-        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:drawableLeft="@drawable/ic_shows" android:text="TV shows" />
+        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Search" android:visibility="gone" />
+        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="4dp" android:text="Home" />
+        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="4dp" android:text="Live" />
+        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="4dp" android:text="EPG" />
+        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="4dp" android:text="Movies" />
+        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="TV shows" />
 
         <TextView
             android:id="@+id/status"
@@ -133,7 +148,6 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_marginLeft="12dp"
-            android:layout_marginRight="12dp"
             android:layout_weight="1"
             android:ellipsize="end"
             android:gravity="right"
@@ -141,8 +155,6 @@
             android:shadowColor="#000000"
             android:shadowRadius="4"
             android:textColor="@color/text"
-            android:textSize="@dimen/type_caption" />
-
-        <TextView android:id="@+id/nav_settings" style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:drawablePadding="0dp" android:drawableLeft="@drawable/ic_settings" android:paddingLeft="13dp" android:paddingRight="13dp" />
+            android:textSize="@dimen/type_micro" />
     </LinearLayout>
 </FrameLayout>

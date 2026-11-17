@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.View
 import android.view.KeyEvent
 import android.widget.EditText
 import android.widget.TextView
@@ -42,7 +43,16 @@ class SearchActivity : BaseActivity(), CardHost {
         q.setOnKeyListener { _, code, e ->
             if (code == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN && row.items.isNotEmpty()) { results.getChildAt(0)?.requestFocus(); true } else false
         }
-        q.requestFocus()
+        if (intent.getBooleanExtra("fav", false)) {
+            q.visibility = View.GONE
+            count.text = "Favorites"
+            scope.launch {
+                val f = withContext(Dispatchers.IO) { Db.favorites(500) }
+                row.items.clear(); row.items.addAll(f); adapter.notifyDataSetChanged()
+                if (f.isEmpty()) count.text = "No favorites yet. Long-press OK on any card to add one."
+                results.post { results.getChildAt(0)?.requestFocus() }
+            }
+        } else q.requestFocus()
     }
 
     private fun run(text: String) {

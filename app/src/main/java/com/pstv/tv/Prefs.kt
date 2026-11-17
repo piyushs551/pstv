@@ -55,6 +55,8 @@ object Prefs {
 
     // ---- appearance / behaviour (all editable in Settings) ----
     /** 0 Off, 1 Fast, 2 Normal */
+    /** Whole-UI size in percent (density scale). Compact by default: shows more per screen. */
+    var uiScale: Int get() = i("uiscale", 85); set(v) = put("uiscale", v)
     var anim: Int get() = i("anim", 2); set(v) = put("anim", v)
     var hero: Boolean get() = i("hero", 1) == 1; set(v) = put("hero", if (v) 1 else 0)
     var tabFocusSwitch: Boolean get() = i("tabfocus", 1) == 1; set(v) = put("tabfocus", if (v) 1 else 0)

@@ -111,6 +111,9 @@ class SettingsActivity : BaseActivity() {
         row("Guide shows", { if (Prefs.epgOnlyWithData) "Only channels with guide data" else "All live channels" }) { Prefs.epgOnlyWithData = !Prefs.epgOnlyWithData }
 
         section("APPEARANCE")
+        row("UI size", { "${Prefs.uiScale}%  (smaller = more on screen)" }) {
+            choose("UI size", listOf("Compact · 75%" to 75, "Compact · 85% (default)" to 85, "Medium · 100%" to 100, "Large · 115%" to 115), Prefs.uiScale) { Prefs.uiScale = it; recreate() }
+        }
         row("Animations", { listOf("Off", "Fast", "Normal")[Prefs.anim] }) { choose("Animations (focus zoom and banner fade)", listOf("Off" to 0, "Fast" to 1, "Normal" to 2), Prefs.anim) { Prefs.anim = it } }
         row("Hero banner", { if (Prefs.hero) "On" else "Off (rows only, uses less memory)" }) { Prefs.hero = !Prefs.hero }
         row("Switch tabs when focused", { if (Prefs.tabFocusSwitch) "On" else "Off (press OK to switch)" }) { Prefs.tabFocusSwitch = !Prefs.tabFocusSwitch }

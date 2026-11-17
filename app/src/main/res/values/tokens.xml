@@ -37,14 +37,15 @@
     <dimen name="space_xl">32dp</dimen>
     <dimen name="safe_h">48dp</dimen>
     <dimen name="safe_v">27dp</dimen>
+    <dimen name="content_start">72dp</dimen>   <!-- left edge of page content; the icon rail sits to its left -->
 
     <!-- Cards: 2:3 posters for movies/series, 16:9 for live/episodes -->
     <dimen name="poster_w">112dp</dimen>
     <dimen name="poster_h">168dp</dimen>
-    <dimen name="wide_w">200dp</dimen>
-    <dimen name="wide_h">112dp</dimen>
+    <dimen name="wide_w">216dp</dimen>
+    <dimen name="wide_h">122dp</dimen>
     <dimen name="card_gap">12dp</dimen>
-    <dimen name="caption_h">40dp</dimen>
+    <dimen name="caption_h">38dp</dimen>
 
     <!-- Focus: ~9% scale, ~150 ms, neighbours dimmed -->
     <item name="focus_scale" format="float" type="dimen">1.09</item>

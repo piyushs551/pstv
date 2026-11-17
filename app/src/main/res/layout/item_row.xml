@@ -12,11 +12,11 @@
         android:layout_height="wrap_content"
         android:ellipsize="end"
         android:maxLines="1"
-        android:paddingLeft="@dimen/safe_h"
+        android:paddingLeft="@dimen/content_start"
         android:paddingTop="4dp"
         android:fontFamily="@string/font_strong"
         android:textColor="@color/text"
-        android:textSize="@dimen/type_title" />
+        android:textSize="@dimen/type_body" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/row_list"
@@ -25,7 +25,7 @@
         android:clipChildren="false"
         android:clipToPadding="false"
         android:paddingBottom="4dp"
-        android:paddingLeft="@dimen/safe_h"
+        android:paddingLeft="@dimen/content_start"
         android:paddingRight="@dimen/safe_h"
         android:paddingTop="12dp" />
 </LinearLayout>

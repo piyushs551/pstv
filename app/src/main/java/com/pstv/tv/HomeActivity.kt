@@ -40,6 +40,7 @@ class HomeActivity : BaseActivity(), CardHost {
     private var shownVersion = -1
     private var buildToken = 0
     private var chromeShown = true
+    private var appliedScale = 0
 
     private val repoListener: () -> Unit = {
         status.text = listOf(Repo.status, Epg.status).firstOrNull { it.isNotEmpty() } ?: ""
@@ -49,6 +50,7 @@ class HomeActivity : BaseActivity(), CardHost {
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         setContentView(R.layout.activity_home)
+        appliedScale = Prefs.uiScale
         tabs = findViewById(R.id.tabs); status = findViewById(R.id.status)
         rowsPage = findViewById(R.id.page_rows); livePageView = findViewById(R.id.page_live); epgPageView = findViewById(R.id.page_epg)
         rowsRv = findViewById(R.id.rows)
@@ -65,9 +67,11 @@ class HomeActivity : BaseActivity(), CardHost {
             t.setOnFocusChangeListener { _, f -> if (f && i != 0 && i != tab && Prefs.tabFocusSwitch) { handler.removeCallbacksAndMessages(null); handler.postDelayed({ showTab(i, focus = false) }, 250) } }
             t.setOnKeyListener { _, k, e -> if (k == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN) { focusPage(); true } else false }
         }
-        findViewById<View>(R.id.nav_settings).apply {
-            setOnClickListener { startActivity(Intent(this@HomeActivity, SettingsActivity::class.java)) }
-            setOnKeyListener { _, k, e -> if (k == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN) { focusPage(); true } else false }
+        findViewById<View>(R.id.rail_search).setOnClickListener { startActivity(Intent(this, SearchActivity::class.java)) }
+        findViewById<View>(R.id.rail_fav).setOnClickListener { startActivity(Intent(this, SearchActivity::class.java).putExtra("fav", true)) }
+        findViewById<View>(R.id.nav_settings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
+        for (id in listOf(R.id.rail_search, R.id.rail_fav, R.id.nav_settings)) findViewById<View>(id).setOnKeyListener { _, k, e ->
+            if (k == KeyEvent.KEYCODE_DPAD_RIGHT && e.action == KeyEvent.ACTION_DOWN) { focusPage(); true } else false
         }
         val play = findViewById<View>(R.id.hero_play)
         play.nextFocusUpId = tabs.getChildAt(1).also { if (it.id == View.NO_ID) it.id = View.generateViewId() }.id
@@ -82,6 +86,7 @@ class HomeActivity : BaseActivity(), CardHost {
 
     override fun onStart() {
         super.onStart()
+        if (appliedScale != Prefs.uiScale) { recreate(); return }
         repoListener()
         if (tab == 1) refreshPersonalRows()
     }
@@ -234,7 +239,7 @@ class HomeActivity : BaseActivity(), CardHost {
             KeyEvent.KEYCODE_DPAD_UP -> {
                 if (idx <= 0) { if (Prefs.hero) findViewById<View>(R.id.hero_play).requestFocus() else focusTabs() } else focusRow(idx - 1); true
             }
-            KeyEvent.KEYCODE_DPAD_LEFT -> pos == 0
+            KeyEvent.KEYCODE_DPAD_LEFT -> { if (pos == 0) findViewById<View>(R.id.rail_search).requestFocus(); pos == 0 }
             KeyEvent.KEYCODE_DPAD_RIGHT -> pos >= row.items.size - 1
             else -> false
         }
@@ -273,7 +278,7 @@ class Hero(private val act: HomeActivity) {
         private set
 
     val w = act.resources.displayMetrics.widthPixels
-    val h = dp(act, 280)
+    val h = dp(act, 236)
 
     init {
         act.findViewById<View>(R.id.hero_play).setOnClickListener { act.openCurrent(false) }

@@ -46,12 +46,24 @@
     <style name="Tab" parent="Btn">
         <item name="android:background">@drawable/tab_bg</item>
         <item name="android:textColor">@drawable/tab_text</item>
-        <item name="android:drawableTint">@drawable/tab_text</item>
         <item name="android:fontFamily">@string/font_medium</item>
-        <item name="android:paddingLeft">16dp</item>
-        <item name="android:paddingRight">16dp</item>
-        <item name="android:paddingTop">7dp</item>
-        <item name="android:paddingBottom">7dp</item>
+        <item name="android:textSize">@dimen/type_body</item>
+        <item name="android:paddingLeft">13dp</item>
+        <item name="android:paddingRight">13dp</item>
+        <item name="android:paddingTop">5dp</item>
+        <item name="android:paddingBottom">5dp</item>
+    </style>
+
+    <style name="Rail">
+        <item name="android:layout_width">34dp</item>
+        <item name="android:layout_height">34dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:padding">7dp</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+        <item name="android:background">@drawable/rail_bg</item>
+        <item name="android:tint">@drawable/tab_text</item>
+        <item name="android:stateListAnimator">@animator/focus_pop</item>
     </style>
 
     <style name="Chip">
