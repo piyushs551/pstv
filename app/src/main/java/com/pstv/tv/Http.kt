@@ -6,7 +6,7 @@ import okhttp3.Request
 import java.util.concurrent.TimeUnit
 
 object Http {
-    const val UA = "PSTV/0.1"
+    val UA: String get() = Prefs.ua
 
     val client: OkHttpClient by lazy {
         OkHttpClient.Builder()

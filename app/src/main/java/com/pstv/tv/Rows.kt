@@ -1,11 +1,14 @@
 package com.pstv.tv
 
+import android.content.Context
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -14,7 +17,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** One horizontal row. Items load lazily (only when the row is first bound) and page in as you scroll. */
-class RowDesc(val key: String, val title: String, val load: (offset: Int, limit: Int) -> List<Item>) {
+class RowDesc(val key: String, val title: String, val ranked: Boolean = false, val load: (offset: Int, limit: Int) -> List<Item>) {
     val items = ArrayList<Item>()
     var loading = false
     var done = false
@@ -24,48 +27,69 @@ class RowDesc(val key: String, val title: String, val load: (offset: Int, limit:
 
 interface CardHost {
     val baseActivity: BaseActivity
-    fun onCardFocused(row: RowDesc, pos: Int, item: Item)
-    fun onCardKey(row: RowDesc, pos: Int, keyCode: Int, e: KeyEvent): Boolean
+    fun onCardFocused(row: RowDesc, pos: Int, item: Item) {}
+    fun onCardKey(row: RowDesc, pos: Int, keyCode: Int, e: KeyEvent): Boolean = false
     fun onCardClick(item: Item)
-    fun onCardLongClick(item: Item)
+    fun onCardLongClick(item: Item) {}
+    fun onRowEmpty(row: RowDesc) {}
+}
+
+/** Animation settings (Settings > Animations). Property animations only: no extra bitmaps, no blur. */
+object Anim {
+    val scale get() = when (Prefs.anim) { 0 -> 1f; 1 -> 1.05f; else -> 1.08f }
+    val dur get() = when (Prefs.anim) { 0 -> 0L; 1 -> 90L; else -> 140L }
+    val interp = DecelerateInterpolator()
 }
 
 object Card {
     const val PAGE = 100
-    fun width(c: android.content.Context, kind: Kind) = dp(c, if (kind == Kind.LIVE) 132 else 104)
-    fun height(c: android.content.Context, kind: Kind) = dp(c, if (kind == Kind.LIVE) 74 else 156)
+    const val W = 190
+    const val H = 107
+
+    fun sub(item: Item): String = when {
+        item.progress > 0f -> "${(item.progress * 100).toInt()}% watched"
+        item.kind == Kind.LIVE -> item.group
+        else -> listOfNotNull(item.year?.toString(), item.genres?.substringBefore(',')).joinToString("  •  ")
+    }
 }
 
-class CardAdapter(private val row: RowDesc, private val host: CardHost, private val rowKindHint: () -> Kind) :
-    RecyclerView.Adapter<CardAdapter.VH>() {
+class CardAdapter(private val row: RowDesc, private val host: CardHost) : RecyclerView.Adapter<CardAdapter.VH>() {
 
     class VH(v: View) : RecyclerView.ViewHolder(v) {
+        val frame: View = v.findViewById(R.id.card_frame)
         val img: ImageView = v.findViewById(R.id.card_img)
+        val rank: TextView = v.findViewById(R.id.card_rank)
         val label: TextView = v.findViewById(R.id.card_label)
+        val sub: TextView = v.findViewById(R.id.card_sub)
         val bar: View = v.findViewById(R.id.card_bar)
     }
 
     override fun getItemCount() = row.items.size
-    override fun getItemId(position: Int) = row.items[position].id
 
     override fun onCreateViewHolder(p: ViewGroup, t: Int): VH =
         VH(LayoutInflater.from(p.context).inflate(R.layout.item_card, p, false))
 
     override fun onBindViewHolder(h: VH, pos: Int) {
         val item = row.items[pos]
-        val c = h.itemView.context
-        val w = Card.width(c, item.kind)
-        val ht = Card.height(c, item.kind)
-        h.itemView.layoutParams = RecyclerView.LayoutParams(w, ht).apply { marginEnd = dp(c, 8) }
-        h.img.scaleType = if (item.kind == Kind.LIVE && item.poster == null) ImageView.ScaleType.FIT_CENTER else ImageView.ScaleType.CENTER_CROP
-        h.img.setPadding(if (item.kind == Kind.LIVE && item.poster == null) dp(c, 14) else 0, 0, if (item.kind == Kind.LIVE && item.poster == null) dp(c, 14) else 0, 0)
-        Images.card(h.img, item.cardArt, item.name, w, ht)
+        val c: Context = h.itemView.context
+        val w = dp(c, Card.W); val ht = dp(c, Card.H)
+        h.frame.layoutParams = LinearLayout.LayoutParams(w, ht)
+        h.itemView.layoutParams = RecyclerView.LayoutParams(w, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginEnd = dp(c, 8); bottomMargin = dp(c, 2) }
+        val logoOnly = item.kind == Kind.LIVE && item.backdrop == null && item.poster == null && item.logo != null
+        h.img.scaleType = if (logoOnly) ImageView.ScaleType.FIT_CENTER else ImageView.ScaleType.CENTER_CROP
+        val pad = if (logoOnly) dp(c, 22) else 0
+        h.img.setPadding(pad, pad / 2, pad, pad / 2)
+        Images.card(h.img, item.cardArt, cleanTitle(item.name), w, ht)
         h.label.text = cleanTitle(item.name)
+        h.sub.text = Card.sub(item)
+        h.rank.visibility = if (row.ranked) View.VISIBLE else View.GONE
+        if (row.ranked) h.rank.text = "#${pos + 1}"
         h.bar.visibility = if (item.progress > 0f) View.VISIBLE else View.GONE
         if (item.progress > 0f) h.bar.layoutParams = (h.bar.layoutParams as FrameLayout.LayoutParams).also { it.width = (w * item.progress).toInt() }
 
         h.itemView.setOnFocusChangeListener { v, focused ->
-            v.animate().scaleX(if (focused) 1.08f else 1f).scaleY(if (focused) 1.08f else 1f).setDuration(100).start()
+            val s = if (focused) Anim.scale else 1f
+            if (Anim.dur == 0L) { v.scaleX = s; v.scaleY = s } else v.animate().scaleX(s).scaleY(s).setDuration(Anim.dur).setInterpolator(Anim.interp).start()
             v.translationZ = if (focused) 10f else 0f
             val p = h.bindingAdapterPosition
             if (focused && p >= 0 && p < row.items.size) host.onCardFocused(row, p, row.items[p])
@@ -78,6 +102,11 @@ class CardAdapter(private val row: RowDesc, private val host: CardHost, private 
         h.itemView.setOnLongClickListener { val p = h.bindingAdapterPosition; if (p >= 0) host.onCardLongClick(row.items[p]); true }
 
         if (pos >= row.items.size - 12 && !row.done) loadMore()
+        // Fill in TMDB art/plot for visible cards in the background (cached in SQLite; never blocks the UI).
+        if (item.overview == null && item.kind != Kind.LIVE) Enricher.ensure(item) { fresh ->
+            val i = row.items.indexOfFirst { it.id == fresh.id }
+            if (i >= 0) { row.items[i] = fresh; notifyItemChanged(i) }
+        }
     }
 
     override fun onViewRecycled(h: VH) {
@@ -96,15 +125,15 @@ class CardAdapter(private val row: RowDesc, private val host: CardHost, private 
             row.loading = false
             row.started = true
             if (start == 0) notifyDataSetChanged() else notifyItemRangeInserted(start, more.size)
+            if (row.items.isEmpty() && row.done) host.onRowEmpty(row)
         }
     }
 }
 
-class RowsAdapter(val rows: List<RowDesc>, private val host: CardHost) : RecyclerView.Adapter<RowsAdapter.VH>() {
+class RowsAdapter(val rows: MutableList<RowDesc>, private val host: CardHost) : RecyclerView.Adapter<RowsAdapter.VH>() {
     class VH(v: View) : RecyclerView.ViewHolder(v) {
         val title: TextView = v.findViewById(R.id.row_title)
         val list: RecyclerView = v.findViewById(R.id.row_list)
-        var adapter: CardAdapter? = null
     }
 
     override fun getItemCount() = rows.size
@@ -114,7 +143,6 @@ class RowsAdapter(val rows: List<RowDesc>, private val host: CardHost) : Recycle
         val vh = VH(v)
         vh.list.layoutManager = LinearLayoutManager(p.context, RecyclerView.HORIZONTAL, false)
         vh.list.itemAnimator = null
-        vh.list.setHasFixedSize(false)
         vh.list.setItemViewCacheSize(4)
         return vh
     }
@@ -122,8 +150,7 @@ class RowsAdapter(val rows: List<RowDesc>, private val host: CardHost) : Recycle
     override fun onBindViewHolder(h: VH, pos: Int) {
         val row = rows[pos]
         h.title.text = row.title
-        val a = CardAdapter(row, host) { Kind.MOVIE }
-        h.adapter = a
+        val a = CardAdapter(row, host)
         h.list.adapter = a
         if (!row.started) a.loadMore() // lazy: only rows that get bound ever hit the database
     }

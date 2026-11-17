@@ -29,8 +29,8 @@ class SearchActivity : BaseActivity(), CardHost {
         setContentView(R.layout.activity_search)
         results = findViewById(R.id.results)
         count = findViewById(R.id.count)
-        results.layoutManager = GridLayoutManager(this, 6)
-        adapter = CardAdapter(row, this) { Kind.MOVIE }
+        results.layoutManager = GridLayoutManager(this, 4)
+        adapter = CardAdapter(row, this)
         results.adapter = adapter
 
         val q = findViewById<EditText>(R.id.query)
@@ -58,7 +58,7 @@ class SearchActivity : BaseActivity(), CardHost {
     override fun onCardFocused(row: RowDesc, pos: Int, item: Item) {}
     override fun onCardKey(row: RowDesc, pos: Int, keyCode: Int, e: KeyEvent): Boolean {
         // From the first grid row, UP returns to the search box.
-        if (keyCode == KeyEvent.KEYCODE_DPAD_UP && pos < 6) { findViewById<EditText>(R.id.query).requestFocus(); return true }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_UP && pos < 4) { findViewById<EditText>(R.id.query).requestFocus(); return true }
         return false
     }
     override fun onCardClick(item: Item) = Nav.open(this, item)

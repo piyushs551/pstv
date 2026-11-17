@@ -17,14 +17,15 @@ object Repo {
     @Volatile var status: String = ""
     @Volatile var refreshing = false
 
-    private const val STALE_MS = 6 * 60 * 60 * 1000L
+    fun ping() = notifyChanged()
 
     private fun notifyChanged() = main.post { listeners.forEach { it() } }
     private fun updateStatus(s: String) { status = s; notifyChanged() }
 
     fun refreshIfStale() {
         if (!Prefs.hasSource) return
-        if (Db.count() == 0 || System.currentTimeMillis() - Prefs.lastRefresh > STALE_MS) refresh()
+        if (Db.count() == 0 || (Prefs.refreshHours > 0 && System.currentTimeMillis() - Prefs.lastRefresh > Prefs.refreshHours * 3_600_000L)) refresh()
+        Epg.refreshIfStale()
     }
 
     fun refresh() {
@@ -47,6 +48,7 @@ object Repo {
                 Prefs.lastRefresh = System.currentTimeMillis()
                 refreshing = false
                 updateStatus("")
+                Epg.refreshIfStale()
             } catch (e: Exception) {
                 refreshing = false
                 updateStatus("Playlist update failed: ${e.message ?: e.javaClass.simpleName}")

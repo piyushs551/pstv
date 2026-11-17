@@ -13,6 +13,7 @@ object Xtream {
 
     private fun enc(s: String) = java.net.URLEncoder.encode(s, "UTF-8")
 
+    fun xmltvUrl() = "${base()}/xmltv.php?username=${enc(Prefs.xUser)}&password=${enc(Prefs.xPass)}"
     fun liveUrl(id: String) = "${base()}/live/${Prefs.xUser}/${Prefs.xPass}/$id.m3u8"
     fun movieUrl(id: String, ext: String) = "${base()}/movie/${Prefs.xUser}/${Prefs.xPass}/$id.$ext"
     fun episodeUrl(id: String, ext: String) = "${base()}/series/${Prefs.xUser}/${Prefs.xPass}/$id.$ext"
@@ -69,7 +70,7 @@ object Xtream {
         stream(api("get_live_streams")) { r ->
             arrayOfObjects(r) { m ->
                 val id = m["stream_id"] ?: return@arrayOfObjects
-                sink(Item(0, Kind.LIVE, liveCats[m["category_id"]] ?: "Live", m["name"] ?: id, m["stream_icon"]?.ifBlank { null }, liveUrl(id)))
+                sink(Item(0, Kind.LIVE, liveCats[m["category_id"]] ?: "Live", m["name"] ?: id, m["stream_icon"]?.ifBlank { null }, liveUrl(id), tvg = m["epg_channel_id"]?.trim()?.lowercase()?.ifBlank { null }))
             }
         }
         val vodCats = categories("get_vod_categories")

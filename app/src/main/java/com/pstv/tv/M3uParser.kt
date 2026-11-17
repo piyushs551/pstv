@@ -10,20 +10,26 @@ object M3uParser {
         var name: String? = null
         var logo: String? = null
         var group = "Other"
+        var tvg: String? = null
         r.lineSequence().forEach { raw ->
             val line = raw.trim()
             when {
+                line.startsWith("#EXTM3U", ignoreCase = true) -> {
+                    attr.findAll(line).firstOrNull { it.groupValues[1].lowercase() in setOf("url-tvg", "x-tvg-url") }
+                        ?.let { Prefs.epgAuto = it.groupValues[2].substringBefore(',') }
+                }
                 line.startsWith("#EXTINF", ignoreCase = true) -> {
                     val comma = line.lastIndexOf(',')
                     name = if (comma >= 0) line.substring(comma + 1).trim() else null
                     var tvgName: String? = null
-                    logo = null; group = "Other"
+                    logo = null; group = "Other"; tvg = null
                     for (m in attr.findAll(line)) {
                         val v = m.groupValues[2]
                         when (m.groupValues[1].lowercase()) {
                             "tvg-logo" -> logo = v.ifBlank { null }
                             "group-title" -> group = v.ifBlank { "Other" }
                             "tvg-name" -> tvgName = v
+                            "tvg-id" -> tvg = v.trim().lowercase().ifBlank { null }
                         }
                     }
                     if (name.isNullOrBlank()) name = tvgName
@@ -33,7 +39,7 @@ object M3uParser {
                 else -> {
                     val n = name
                     if (!n.isNullOrBlank() && (line.startsWith("http") || line.startsWith("rtmp") || line.startsWith("rtsp") || line.startsWith("udp"))) {
-                        sink(Item(0, classify(line, group), group, n, logo, line))
+                        sink(Item(0, classify(line, group), group, n, logo, line, tvg = tvg))
                     }
                     name = null; logo = null; group = "Other"
                 }

@@ -1,78 +1,145 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg"
-    android:orientation="vertical">
+    android:background="@color/bg">
 
-    <!-- Top bar -->
+    <!-- Page: Home / Movies / TV shows (hero + rows) -->
     <LinearLayout
+        android:id="@+id/page_rows"
         android:layout_width="match_parent"
-        android:layout_height="46dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <FrameLayout
+            android:id="@+id/hero_area"
+            android:layout_width="match_parent"
+            android:layout_height="326dp">
+
+            <ImageView android:id="@+id/hero_a" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" />
+            <ImageView android:id="@+id/hero_b" android:layout_width="match_parent" android:layout_height="match_parent" android:alpha="0" android:scaleType="centerCrop" />
+            <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/scrim_left" />
+            <View android:layout_width="match_parent" android:layout_height="110dp" android:layout_gravity="bottom" android:background="@drawable/scrim_bottom" />
+
+            <LinearLayout
+                android:layout_width="520dp"
+                android:layout_height="match_parent"
+                android:gravity="bottom"
+                android:orientation="vertical"
+                android:paddingBottom="12dp"
+                android:paddingLeft="40dp">
+
+                <TextView android:id="@+id/hero_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="2" android:textColor="@color/text" android:textSize="26sp" android:textStyle="bold" />
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:orientation="horizontal">
+                    <TextView android:id="@+id/hero_c1" style="@style/Chip" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView android:id="@+id/hero_c2" style="@style/Chip" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView android:id="@+id/hero_c3" style="@style/Chip" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+                <TextView android:id="@+id/hero_desc" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:ellipsize="end" android:maxLines="3" android:textColor="@color/text" android:textSize="13sp" />
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+                    <TextView android:id="@+id/hero_play" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="10dp" android:paddingBottom="6dp" android:paddingTop="6dp" android:text="▶  Play" />
+                    <TextView android:id="@+id/hero_more" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingBottom="6dp" android:paddingTop="6dp" android:text="More Info" />
+                </LinearLayout>
+            </LinearLayout>
+        </FrameLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rows"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipChildren="false"
+            android:clipToPadding="false" />
+    </LinearLayout>
+
+    <!-- Page: Live (category sidebar + channel tiles) -->
+    <LinearLayout
+        android:id="@+id/page_live"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:paddingTop="60dp"
+        android:visibility="gone">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/live_cats"
+            android:layout_width="290dp"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="20dp"
+            android:paddingLeft="28dp"
+            android:paddingRight="12dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/live_grid"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:paddingBottom="20dp"
+            android:paddingLeft="12dp"
+            android:paddingTop="8dp" />
+    </LinearLayout>
+
+    <!-- Page: EPG -->
+    <LinearLayout
+        android:id="@+id/page_epg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingTop="56dp"
+        android:visibility="gone">
+
+        <FrameLayout android:id="@+id/epg_head" android:layout_width="match_parent" android:layout_height="26dp" />
+        <TextView
+            android:id="@+id/epg_msg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="40dp"
+            android:textColor="@color/text_dim"
+            android:textSize="15sp"
+            android:visibility="gone" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/epg_rows"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipChildren="false" />
+    </LinearLayout>
+
+    <!-- Tab bar -->
+    <LinearLayout
+        android:id="@+id/tabs"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingLeft="40dp"
-        android:paddingRight="40dp">
+        android:paddingLeft="28dp"
+        android:paddingRight="36dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="28dp"
-            android:text="PSTV"
-            android:textColor="@color/accent"
-            android:textSize="22sp"
-            android:textStyle="bold" />
-
-        <TextView android:id="@+id/nav_home" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="8dp" android:text="Home" />
-        <TextView android:id="@+id/nav_search" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="8dp" android:text="Search" />
-        <TextView android:id="@+id/nav_settings" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Settings" />
+        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="6dp" android:text="Search" />
+        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="6dp" android:text="Home" />
+        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="6dp" android:text="Live" />
+        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="6dp" android:text="EPG" />
+        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="6dp" android:text="Movies" />
+        <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="TV shows" />
 
         <TextView
             android:id="@+id/status"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="12dp"
+            android:layout_marginRight="12dp"
             android:layout_weight="1"
             android:ellipsize="end"
             android:gravity="right"
             android:maxLines="1"
-            android:textColor="@color/text_dim"
-            android:textSize="13sp" />
+            android:shadowColor="#000000"
+            android:shadowRadius="4"
+            android:textColor="@color/text"
+            android:textSize="12sp" />
+
+        <TextView android:id="@+id/nav_settings" style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Settings" />
     </LinearLayout>
-
-    <!-- Hero banner -->
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="196dp"
-        android:clipChildren="false">
-
-        <ImageView android:id="@+id/hero_a" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" />
-        <ImageView android:id="@+id/hero_b" android:layout_width="match_parent" android:layout_height="match_parent" android:alpha="0" android:scaleType="centerCrop" />
-        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/scrim_left" />
-        <View android:layout_width="match_parent" android:layout_height="70dp" android:layout_gravity="bottom" android:background="@drawable/scrim_bottom" />
-
-        <LinearLayout
-            android:layout_width="480dp"
-            android:layout_height="match_parent"
-            android:gravity="center_vertical"
-            android:orientation="vertical"
-            android:paddingLeft="40dp">
-
-            <TextView android:id="@+id/hero_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="2" android:textColor="@color/text" android:textSize="28sp" android:textStyle="bold" />
-            <TextView android:id="@+id/hero_meta" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:maxLines="1" android:textColor="@color/text_dim" android:textSize="13sp" />
-            <TextView android:id="@+id/hero_desc" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:ellipsize="end" android:maxLines="3" android:textColor="@color/text" android:textSize="14sp" />
-
-            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:orientation="horizontal">
-                <TextView android:id="@+id/hero_play" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="10dp" android:text="▶  Play" />
-                <TextView android:id="@+id/hero_more" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="More Info" />
-            </LinearLayout>
-        </LinearLayout>
-    </FrameLayout>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rows"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:clipChildren="false"
-        android:clipToPadding="false" />
-</LinearLayout>
+</FrameLayout>

@@ -15,14 +15,8 @@
         app:surface_type="surface_view"
         app:use_controller="false" />
 
-    <ProgressBar
-        android:id="@+id/spin"
-        android:layout_width="44dp"
-        android:layout_height="44dp"
-        android:layout_gravity="center"
-        android:visibility="gone" />
+    <ProgressBar android:id="@+id/spin" android:layout_width="44dp" android:layout_height="44dp" android:layout_gravity="center" android:visibility="gone" />
 
-    <!-- Seek / info overlay -->
     <LinearLayout
         android:id="@+id/overlay"
         android:layout_width="match_parent"
@@ -30,24 +24,43 @@
         android:layout_gravity="bottom"
         android:background="@drawable/scrim_label"
         android:orientation="vertical"
-        android:paddingBottom="24dp"
+        android:paddingBottom="18dp"
         android:paddingLeft="48dp"
         android:paddingRight="48dp"
-        android:paddingTop="40dp"
+        android:paddingTop="56dp"
         android:visibility="gone">
 
-        <TextView android:id="@+id/p_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:textColor="@color/text" android:textSize="18sp" android:textStyle="bold" />
-        <ProgressBar
-            android:id="@+id/p_bar"
-            style="?android:attr/progressBarStyleHorizontal"
+        <LinearLayout android:id="@+id/p_chips" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" />
+        <TextView android:id="@+id/p_sub" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:maxLines="1" android:textColor="@color/text" android:textSize="13sp" />
+        <TextView android:id="@+id/p_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:textColor="@color/text" android:textSize="22sp" android:textStyle="bold" />
+
+        <FrameLayout
+            android:id="@+id/p_bar_wrap"
             android:layout_width="match_parent"
-            android:layout_height="6dp"
-            android:layout_marginBottom="4dp"
-            android:layout_marginTop="8dp"
-            android:max="1000"
-            android:progressTint="@color/accent" />
-        <TextView android:id="@+id/p_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/text_dim" android:textSize="13sp" />
-        <TextView android:id="@+id/p_hint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textColor="@color/text_dim" android:textSize="12sp" />
+            android:layout_height="24dp"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/row_bg"
+            android:focusable="true"
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp">
+            <ProgressBar
+                android:id="@+id/p_bar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:layout_gravity="center_vertical"
+                android:max="1000"
+                android:progressTint="@color/accent" />
+        </FrameLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:gravity="center_vertical" android:orientation="horizontal">
+            <TextView android:id="@+id/p_time" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/text" android:textSize="13sp" />
+            <TextView android:id="@+id/p_play" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:paddingBottom="5dp" android:paddingTop="5dp" android:text="Pause" android:textSize="13sp" />
+            <TextView android:id="@+id/p_audio" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:paddingBottom="5dp" android:paddingTop="5dp" android:text="Audio" android:textSize="13sp" />
+            <TextView android:id="@+id/p_subs" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:paddingBottom="5dp" android:paddingTop="5dp" android:text="Subtitles" android:textSize="13sp" />
+            <TextView android:id="@+id/p_aspect" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:paddingBottom="5dp" android:paddingTop="5dp" android:text="Aspect" android:textSize="13sp" />
+        </LinearLayout>
+        <TextView android:id="@+id/p_hint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textColor="@color/text_dim" android:textSize="11sp" />
     </LinearLayout>
 
     <TextView
@@ -62,7 +75,6 @@
         android:textSize="20sp"
         android:visibility="gone" />
 
-    <!-- Mini channel list (live) -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chan_list"
         android:layout_width="280dp"
@@ -70,4 +82,17 @@
         android:background="#E60B0B10"
         android:padding="8dp"
         android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/side"
+        android:layout_width="340dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="right"
+        android:background="#E60B0B10"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:visibility="gone">
+        <TextView android:id="@+id/side_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:padding="10dp" android:textColor="@color/text" android:textSize="17sp" android:textStyle="bold" />
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/side_list" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
+    </LinearLayout>
 </FrameLayout>

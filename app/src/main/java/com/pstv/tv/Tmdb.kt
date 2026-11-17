@@ -16,7 +16,14 @@ object Tmdb {
     private const val IMG = "https://image.tmdb.org/t/p"
     private const val TTL = 12 * 60 * 60 * 1000L
 
-    data class Title(val name: String, val year: Int?, val overview: String?, val poster: String?, val backdrop: String?)
+    data class Title(val name: String, val year: Int?, val overview: String?, val poster: String?, val backdrop: String?, val rating: Float? = null, val genres: String? = null)
+
+    private val genreNames = mapOf(
+        28 to "Action", 12 to "Adventure", 16 to "Animation", 35 to "Comedy", 80 to "Crime", 99 to "Documentary", 18 to "Drama",
+        10751 to "Family", 14 to "Fantasy", 36 to "History", 27 to "Horror", 10402 to "Music", 9648 to "Mystery", 10749 to "Romance",
+        878 to "Science Fiction", 10770 to "TV Movie", 53 to "Thriller", 10752 to "War", 37 to "Western", 10759 to "Action & Adventure",
+        10762 to "Kids", 10763 to "News", 10764 to "Reality", 10765 to "Sci-Fi & Fantasy", 10766 to "Soap", 10767 to "Talk", 10768 to "War & Politics",
+    )
 
     val enabled get() = Prefs.tmdbKey.isNotEmpty()
 
@@ -30,13 +37,13 @@ object Tmdb {
                 name, date.take(4).toIntOrNull(), o.optString("overview").ifBlank { null },
                 o.optString("poster_path").takeIf { it.startsWith("/") }?.let { "$IMG/w342$it" },
                 o.optString("backdrop_path").takeIf { it.startsWith("/") }?.let { "$IMG/w1280$it" },
+                o.optDouble("vote_average", 0.0).takeIf { it > 0 }?.toFloat(),
+                o.optJSONArray("genre_ids")?.let { g -> (0 until minOf(g.length(), 3)).mapNotNull { genreNames[g.optInt(it)] }.joinToString(", ").ifEmpty { null } },
             )
         }
     }
 
-    /** Trending titles that exist in the user's playlist, with TMDB art/plot stored on the matching rows. */
-    fun trendingInPlaylist(): List<Item> {
-        if (!enabled) return emptyList()
+    private fun trendingJson(): JSONObject? {
         val now = System.currentTimeMillis()
         var json = Prefs.trendingJson
         if (json.isEmpty() || now - Prefs.trendingAt > TTL) {
@@ -46,29 +53,25 @@ object Tmdb {
                 val t = JSONObject(Http.getString("$API/trending/tv/week?api_key=$k")).optJSONArray("results")
                 json = JSONObject().put("m", m).put("t", t).toString()
                 Prefs.trendingJson = json; Prefs.trendingAt = now
-            } catch (_: Exception) { if (json.isEmpty()) return emptyList() }
+            } catch (_: Exception) { if (json.isEmpty()) return null }
         }
-        val o = JSONObject(json)
+        return JSONObject(json)
+    }
+
+    /** Trending titles of one kind that exist in the user's playlist, in TMDB rank order, with art/plot stored on the rows. */
+    fun trendingInPlaylist(kind: Kind): List<Item> {
+        if (!enabled) return emptyList()
+        val o = trendingJson() ?: return emptyList()
+        val titles = if (kind == Kind.SERIES) parse(o.optJSONArray("t"), true) else parse(o.optJSONArray("m"), false)
         val out = ArrayList<Item>()
         val seen = HashSet<Long>()
-        fun match(titles: List<Title>, kind: Kind) {
-            for (t in titles) {
-                val hit = Db.matchTitle(normTitle(t.name), kind, t.year) ?: continue
-                if (!seen.add(hit.id)) continue
-                Db.saveMeta(hit, t.year, t.overview, t.backdrop, t.poster)
-                out += Db.byId(hit.id) ?: hit
-            }
+        for (t in titles) {
+            val hit = Db.matchTitle(normTitle(t.name), kind, t.year) ?: continue
+            if (!seen.add(hit.id)) continue
+            Db.saveMeta(hit, t.year, t.overview, t.backdrop, t.poster, t.rating, t.genres)
+            out += Db.byId(hit.id) ?: hit
         }
-        val movies = parse(o.optJSONArray("m"), false)
-        val shows = parse(o.optJSONArray("t"), true)
-        // Interleave so both kinds show up near the front.
-        val a = ArrayList<Item>(); val b = ArrayList<Item>()
-        val keep = out
-        match(movies, Kind.MOVIE); a.addAll(keep); keep.clear()
-        match(shows, Kind.SERIES); b.addAll(keep)
-        val res = ArrayList<Item>()
-        for (i in 0 until maxOf(a.size, b.size)) { a.getOrNull(i)?.let(res::add); b.getOrNull(i)?.let(res::add) }
-        return res
+        return out
     }
 
     fun lookup(item: Item): Title? {
@@ -98,7 +101,7 @@ object Enricher {
                 gate.withPermit {
                     val t = Tmdb.lookup(item)
                     if (t != null) {
-                        Db.saveMeta(item, t.year, t.overview, t.backdrop, t.poster)
+                        Db.saveMeta(item, t.year, t.overview, t.backdrop, t.poster, t.rating, t.genres)
                         Db.byId(item.id)?.let { fresh -> main.post { done(fresh) } }
                     }
                 }

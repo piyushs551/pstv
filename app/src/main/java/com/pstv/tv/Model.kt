@@ -15,10 +15,13 @@ data class Item(
     val poster: String? = null,
     val posMs: Long = 0,
     val durMs: Long = 0,
+    val tvg: String? = null,
+    val rating: Float? = null,
+    val genres: String? = null,
 ) {
     val progress: Float get() = if (durMs > 0) (posMs.toFloat() / durMs).coerceIn(0f, 1f) else 0f
     /** Best image for a poster-style card. */
-    val cardArt: String? get() = poster ?: logo
+    val cardArt: String? get() = backdrop?.replace("/w1280/", "/w300/") ?: poster ?: logo
     /** Best image for the hero banner. */
     val heroArt: String? get() = backdrop ?: poster ?: logo
     val isXtreamSeries: Boolean get() = url.startsWith("xs:")

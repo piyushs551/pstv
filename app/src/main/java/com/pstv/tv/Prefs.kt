@@ -39,6 +39,24 @@ object Prefs {
     var trendingJson: String get() = s("trending"); set(v) = put("trending", v)
     var trendingAt: Long get() = sp.getLong("trendingat", 0); set(v) = sp.edit().putLong("trendingat", v).apply()
 
+    // ---- appearance / behaviour (all editable in Settings) ----
+    /** 0 Off, 1 Fast, 2 Normal */
+    var anim: Int get() = i("anim", 2); set(v) = put("anim", v)
+    var hero: Boolean get() = i("hero", 1) == 1; set(v) = put("hero", if (v) 1 else 0)
+    var tabFocusSwitch: Boolean get() = i("tabfocus", 1) == 1; set(v) = put("tabfocus", if (v) 1 else 0)
+    /** Hours between background playlist refreshes; 0 = manual only. */
+    var refreshHours: Int get() = i("refreshh", 6); set(v) = put("refreshh", v)
+    var bufferMb: Int get() = i("bufmb", 32); set(v) = put("bufmb", v)
+    var ua: String get() = s("ua", "PSTV/0.1").ifBlank { "PSTV/0.1" }; set(v) = put("ua", v.trim())
+    /** Ordered home row keys; a leading '!' hides the row. */
+    var homeRows: String get() = s("homerows", DEFAULT_ROWS); set(v) = put("homerows", v)
+    var epgUrl: String get() = s("epgurl"); set(v) = put("epgurl", v.trim())
+    var epgAuto: String get() = s("epgauto"); set(v) = put("epgauto", v)
+    var epgOnlyWithData: Boolean get() = i("epgonly", 1) == 1; set(v) = put("epgonly", if (v) 1 else 0)
+    var epgLast: Long get() = sp.getLong("epglast", 0); set(v) = sp.edit().putLong("epglast", v).apply()
+
+    const val DEFAULT_ROWS = "recent,trendm,trends,favs,livehist,newm,news"
+
     val hasSource: Boolean
         get() = if (sourceType == "xtream") xHost.isNotEmpty() && xUser.isNotEmpty() else m3uUrl.isNotEmpty()
 }

@@ -91,6 +91,29 @@ class SettingsActivity : BaseActivity() {
             if (!Prefs.hasSource) toast("Enter your M3U URL or Xtream login first") else Repo.refresh()
         }
 
+        row("Auto refresh playlist", { if (Prefs.refreshHours == 0) "Manual only" else "Every ${Prefs.refreshHours} hours" }) {
+            choose("Auto refresh", listOf("Manual only" to 0, "Every 1 hour" to 1, "Every 6 hours" to 6, "Every 12 hours" to 12, "Every 24 hours" to 24), Prefs.refreshHours) { Prefs.refreshHours = it }
+        }
+        row("User-Agent", { Prefs.ua }) { edit("User-Agent sent to your provider", Prefs.ua) { Prefs.ua = it } }
+
+        section("GUIDE (EPG)")
+        row("XMLTV URL", { Prefs.epgUrl.ifEmpty { "Automatic (Xtream login or the playlist's url-tvg)" } }) { edit("XMLTV URL (blank = automatic)", Prefs.epgUrl, hint = "http://…/xmltv.php") { Prefs.epgUrl = it } }
+        row("Refresh guide now", {
+            when {
+                Epg.refreshing -> "Updating…"
+                Epg.status.isNotEmpty() -> Epg.status
+                Prefs.epgLast == 0L -> "Never refreshed"
+                else -> "Updated ${android.text.format.DateUtils.getRelativeTimeSpanString(Prefs.epgLast)}  •  ${Db.epgCount()} programmes"
+            }
+        }) { if (Epg.url().isBlank()) toast("Set an XMLTV URL first") else Epg.refresh() }
+        row("Guide shows", { if (Prefs.epgOnlyWithData) "Only channels with guide data" else "All live channels" }) { Prefs.epgOnlyWithData = !Prefs.epgOnlyWithData }
+
+        section("APPEARANCE")
+        row("Animations", { listOf("Off", "Fast", "Normal")[Prefs.anim] }) { choose("Animations (focus zoom and banner fade)", listOf("Off" to 0, "Fast" to 1, "Normal" to 2), Prefs.anim) { Prefs.anim = it } }
+        row("Hero banner", { if (Prefs.hero) "On" else "Off (rows only, uses less memory)" }) { Prefs.hero = !Prefs.hero }
+        row("Switch tabs when focused", { if (Prefs.tabFocusSwitch) "On" else "Off (press OK to switch)" }) { Prefs.tabFocusSwitch = !Prefs.tabFocusSwitch }
+        row("Home rows", { "Choose and reorder" }) { homeRowsDialog() }
+
         section("ARTWORK & PLOTS")
         row("TMDB API key", { mask(Prefs.tmdbKey) }) { edit("TMDB API key (v3)", Prefs.tmdbKey, password = true) { Prefs.tmdbKey = it; Prefs.trendingAt = 0 } }
         row("Image cache size", { "${Prefs.cacheMb} MB   (used ${Images.diskBytes() / 1_048_576} MB)" }) {
@@ -102,6 +125,8 @@ class SettingsActivity : BaseActivity() {
         row("Seek step", { "${Prefs.seekStep} seconds" }) {
             choose("Seek step", listOf(5, 10, 30, 60).map { "$it seconds" to it }, Prefs.seekStep) { Prefs.seekStep = it }
         }
+
+        row("Buffer size", { "${Prefs.bufferMb} MB" }) { choose("Buffer size (bigger = smoother, more RAM)", listOf("Small · 20 MB" to 20, "Normal · 32 MB" to 32, "Large · 64 MB" to 64), Prefs.bufferMb) { Prefs.bufferMb = it } }
 
         section("SUBTITLES")
         row("OpenSubtitles API key", { mask(Prefs.osKey) }) { edit("OpenSubtitles API key", Prefs.osKey, password = true) { Prefs.osKey = it } }
@@ -116,6 +141,31 @@ class SettingsActivity : BaseActivity() {
 
         section("ABOUT")
         row("PSTV", { "Version ${packageManager.getPackageInfo(packageName, 0).versionName}" }) {}
+    }
+
+    private val rowNames = linkedMapOf(
+        "recent" to "Continue Watching", "trendm" to "Today's trending movies", "trends" to "Today's trending series", "favs" to "Favorites",
+        "livehist" to "Recently watched channels", "newm" to "Recently added (movies)", "news" to "Recently added (series)",
+    )
+
+    /** Tap a row to move it or show/hide it. Takes effect next time Home is opened. */
+    private fun homeRowsDialog() {
+        val keys = Prefs.homeRows.split(',').filter { it.isNotBlank() }.toMutableList()
+        for (k in rowNames.keys) if (keys.none { it.removePrefix("!") == k }) keys += "!$k"
+        keys.retainAll { it.removePrefix("!") in rowNames }
+        val labels = keys.map { (if (it.startsWith("!")) "✗   " else "✓   ") + rowNames[it.removePrefix("!")] }.toTypedArray()
+        AlertDialog.Builder(this, R.style.Theme_Pstv_Dialog).setTitle("Home rows (✓ shown, ✗ hidden)").setItems(labels) { _, i ->
+            AlertDialog.Builder(this, R.style.Theme_Pstv_Dialog).setTitle(rowNames[keys[i].removePrefix("!")])
+                .setItems(arrayOf("Move up", "Move down", if (keys[i].startsWith("!")) "Show" else "Hide")) { _, a ->
+                    when (a) {
+                        0 -> if (i > 0) { val k = keys.removeAt(i); keys.add(i - 1, k) }
+                        1 -> if (i < keys.size - 1) { val k = keys.removeAt(i); keys.add(i + 1, k) }
+                        2 -> keys[i] = if (keys[i].startsWith("!")) keys[i].removePrefix("!") else "!" + keys[i]
+                    }
+                    Prefs.homeRows = keys.joinToString(",")
+                    homeRowsDialog()
+                }.show()
+        }.show()
     }
 
     companion object {

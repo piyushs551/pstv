@@ -38,10 +38,13 @@ class ShotsTest {
     private fun seed() {
         val ctx = androidx.test.core.app.ApplicationProvider.getApplicationContext<App>()
         Db.replaceAll { sink ->
-            for (g in listOf("News", "Sports", "Kids")) for (i in 1..12) sink(Item(0, Kind.LIVE, g, "Sample Channel $g $i", null, "http://x/live/$g$i"))
-            for (g in listOf("Action", "Drama")) for (i in 1..12) sink(Item(0, Kind.MOVIE, g, "Sample Movie $g $i (20${10 + i})", null, "http://x/movie/$g$i.mp4", year = 2010 + i, overview = "Placeholder plot text for layout preview only."))
+            for (g in listOf("News", "Sports", "Kids")) for (i in 1..12) sink(Item(0, Kind.LIVE, g, "Sample Channel $g $i", null, "http://x/live/$g$i", tvg = "ch$g$i".lowercase()))
+            for (g in listOf("Action", "Drama")) for (i in 1..12) sink(Item(0, Kind.MOVIE, g, "Sample Movie $g $i (20${10 + i})", null, "http://x/movie/$g$i.mp4", year = 2010 + i, overview = "Placeholder plot text for layout preview only. It runs over a few lines so the hero plot area can be judged for spacing.", rating = 7.5f, genres = "Action, Drama"))
             for (i in 1..12) sink(Item(0, Kind.SERIES, "Shows", "Sample Series $i", null, "xs:$i"))
         }
+        val now = System.currentTimeMillis(); val h = 3_600_000L; val base = now - now % h
+        Db.replaceEpg { put -> for (g in listOf("News", "Sports", "Kids")) for (i in 1..12) { var t = base - h; var k = 0; while (t < base + 8 * h) { put("ch$g$i".lowercase(), t, t + (1 + (k + i) % 2) * h, "Sample Show ${k + 1}"); t += (1 + (k + i) % 2) * h; k++ } } }
+        Db.touchLive("http://x/live/News2")
         Db.toggleFav("http://x/live/News1"); Db.toggleFav("http://x/movie/Action3.mp4")
         Db.saveProgress("http://x/movie/Drama2.mp4", 1_800_000, 6_000_000)
     }
@@ -49,7 +52,14 @@ class ShotsTest {
     @Test fun render() {
         seed()
         val home = Robolectric.buildActivity(HomeActivity::class.java).setup().get()
+        run {
+            val rv = home.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rows)
+            rv.getChildAt(0)?.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.row_list)?.getChildAt(0)?.let { it.onFocusChangeListener?.onFocusChange(it, true) }
+        }
         shot(home, "1_home")
+        fun tab(i: Int, name: String) { home.findViewById<android.widget.LinearLayout>(R.id.tabs).getChildAt(i).performClick(); shot(home, name) }
+        tab(2, "5_live"); tab(3, "6_epg"); tab(4, "7_movies")
+        run { val rv = home.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rows); rv.getChildAt(0)?.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.row_list)?.getChildAt(0)?.let { it.onFocusChangeListener?.onFocusChange(it, true) }; shot(home, "7_movies") }
         val search = Robolectric.buildActivity(SearchActivity::class.java).setup().get()
         search.findViewById<EditText>(R.id.query).setText("sample movie")
         shot(search, "2_search")
