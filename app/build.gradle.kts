@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -36,13 +38,15 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
     testOptions { unitTests.isIncludeAndroidResources = true }
 
     packaging {
+        jniLibs.useLegacyPackaging = true   // compress native libs inside the APK (extracted on install)
         resources.excludes += setOf("META-INF/*.version", "META-INF/LICENSE*", "META-INF/NOTICE*", "DebugProbesKt.bin", "kotlin/**", "*.kotlin_builtins")
     }
 }
+
+kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_17) } }
 
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
@@ -55,6 +59,7 @@ dependencies {
     implementation("androidx.media3:media3-ui:$media3")
     implementation("androidx.media3:media3-datasource-okhttp:$media3")
 
+    implementation("dev.jdtech.mpv:libmpv:1.1.0")   // optional alternate engine (declares minSdk 26; see manifest override)
     implementation("io.coil-kt:coil:2.7.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     // JSON: android.util.JsonReader (streaming, for huge Xtream lists) + org.json (small API replies), both built in.
@@ -63,3 +68,7 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.13")
     testImplementation("androidx.test:core:1.5.0")
 }
+
+// libmpv 1.1.0 was built against a newer compileSdk and declares minSdk 26; it only uses basic Android APIs
+// (Context, Surface) plus JNI, so skip the AAR-metadata gate. MpvEngine fails safe if it cannot load on Fire OS 6.
+tasks.configureEach { if (name.startsWith("check") && name.endsWith("AarMetadata")) enabled = false }

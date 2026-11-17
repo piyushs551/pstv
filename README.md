@@ -61,6 +61,11 @@ Settings > **Image cache size** (50/100/200/500 MB, default 100) and **Clear ima
 .\scripts\capture-reference.ps1 -Ip 192.168.1.50 -Interactive # then capture screens you open yourself
 ```
 
+## Player engines
+Settings > PLAYER has separate **Live** and **VOD** sections: pick **ExoPlayer** (lightweight, default) or **MPV** (plays more formats and audio tracks), set fast-forward/rewind steps, low latency (live) and match framerate. **Auto fallback** retries a stream with the other engine if it errors or shows nothing for 15 s. In the player, the Audio and Subtitles panels have "Try MPV/ExoPlayer engine for this stream". Tracks the current engine cannot decode are listed greyed out.
+
+MPV is `libmpv` (declares minSdk 26) running on Fire OS 6 (API 25), which has **not been verified on a real stick**: if it cannot load, the app says so and keeps using ExoPlayer. The APK is about 15 MB because it bundles mpv and FFmpeg for armeabi-v7a.
+
 ## Known limits
 - Subtitle **delay** applies to subtitles downloaded from OpenSubtitles (they are re-timed). Embedded tracks use the stream's own timing.
 - Xtream episodes you open from the series page resume correctly, but do not appear under Continue Watching (only whole movies/channels do).

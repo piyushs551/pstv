@@ -1,7 +1,6 @@
 package com.pstv.tv
 
 import android.app.AlertDialog
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -14,32 +13,16 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.media3.common.C
-import androidx.media3.common.Format
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MimeTypes
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
-import androidx.media3.common.TrackSelectionOverride
-import androidx.media3.datasource.okhttp.OkHttpDataSource
-import androidx.media3.exoplayer.DefaultLoadControl
-import androidx.media3.exoplayer.DefaultRenderersFactory
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.ui.AspectRatioFrameLayout
-import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.PlayerView
-import androidx.media3.ui.SubtitleView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.util.Locale
+import kotlin.math.abs
 
 class PlayerActivity : BaseActivity() {
-    private var player: ExoPlayer? = null
+    private var engine: Engine? = null
     private lateinit var root: FrameLayout
     private lateinit var pv: PlayerView
     private lateinit var spin: View
@@ -68,9 +51,11 @@ class PlayerActivity : BaseActivity() {
     private var episode = 0
     private var resumeMs = 0L
     private var retries = 0
+    private var ready = false
+    private var fallbackUsed = false
+    private var matched = false
+    private var hasExtSub = false
 
-    private var extSrt: String? = null
-    private var extSubFile: File? = null
     private var channels: List<Item> = emptyList()
     private var chIndex = -1
 
@@ -100,15 +85,13 @@ class PlayerActivity : BaseActivity() {
         year = i.getIntExtra("year", -1).takeIf { it > 0 }
         setTitles()
 
-        seeker = SeekController({ player }) { t, d -> showOverlay(preview = t, previewDur = d) }
-        applySubtitleStyle()
-        root.addOnLayoutChangeListener { _, l, t, r, bt, ol, ot, orr, ob -> if (r - l != orr - ol || bt - t != ob - ot) applyAspect() }
+        seeker = SeekController({ engine }) { t, d -> showOverlay(preview = t, previewDur = d) }
+        root.addOnLayoutChangeListener { _, l, t, r, bt, ol, ot, orr, ob -> if (r - l != orr - ol || bt - t != ob - ot) engine?.setAspect(Prefs.aspect) }
 
-        pPlay.setOnClickListener { player?.let { it.playWhenReady = !it.playWhenReady }; showOverlay() }
+        pPlay.setOnClickListener { engine?.let { it.playWhenReady = !it.playWhenReady }; showOverlay() }
         findViewById<View>(R.id.p_audio).setOnClickListener { openAudio() }
         findViewById<View>(R.id.p_subs).setOnClickListener { openSubs() }
         findViewById<View>(R.id.p_aspect).setOnClickListener { openAspect() }
-        findViewById<View>(R.id.p_audio).visibility = View.VISIBLE
         if (isLive) { barWrap.visibility = View.GONE; pPlay.visibility = View.GONE }
 
         if (isLive) {
@@ -135,81 +118,99 @@ class PlayerActivity : BaseActivity() {
         pSub.visibility = if (pSub.text.isEmpty()) View.GONE else View.VISIBLE
     }
 
-    override fun onStart() { super.onStart(); initPlayer(); ui.post(ticker) }
+    override fun onStart() { super.onStart(); startEngine(if (isLive) Prefs.engineLive else Prefs.engineVod, resumeMs); ui.post(ticker) }
 
     override fun onStop() {
         ui.removeCallbacksAndMessages(null)
         seeker.cancel()
         saveProgress()
-        releasePlayer()
+        releaseEngine()
         super.onStop()
     }
 
-    // ---- player ---------------------------------------------------------------------------------
+    // ---- engine ---------------------------------------------------------------------------------
 
-    private fun initPlayer() {
-        if (player != null) return
-        val factory = DefaultRenderersFactory(this)
-            .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF)
-            .setEnableDecoderFallback(true)             // hardware first, fall back only if a codec fails
-        val http = OkHttpDataSource.Factory(Http.client).setUserAgent(Http.UA)
-        val load = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(15_000, 40_000, 2_000, 4_000)
-            .setTargetBufferBytes(Prefs.bufferMb * 1024 * 1024)   // bounds RAM even for 4K HEVC
-            .setPrioritizeTimeOverSizeThresholds(false)
-            .build()
-        val p = ExoPlayer.Builder(this, factory).setMediaSourceFactory(DefaultMediaSourceFactory(http)).setLoadControl(load).build()
-        p.addListener(object : Player.Listener {
-            override fun onPlaybackStateChanged(s: Int) {
-                spin.visibility = if (s == Player.STATE_BUFFERING) View.VISIBLE else View.GONE
-                if (s == Player.STATE_READY) { retries = 0; updateChips() }
-                if (s == Player.STATE_ENDED && !isLive) { Db.saveProgress(key, 0, 1); finish() }
-            }
-            override fun onIsPlayingChanged(playing: Boolean) { pPlay.text = if (p.playWhenReady) "Pause" else "Play" }
-            override fun onPlayWhenReadyChanged(ready: Boolean, reason: Int) { pPlay.text = if (ready) "Pause" else "Play" }
-            override fun onPlayerError(e: PlaybackException) {
-                if (isLive && retries++ < 3) { ui.postDelayed({ start(currentUrl, 0) }, 1500); return }
-                toast("Playback error: ${e.errorCodeName}")
-            }
-        })
-        pv.player = p
-        player = p
-        start(currentUrl, resumeMs)
-        applyAspect()
-        applySubtitleStyle()
-    }
-
-    private fun releasePlayer() {
-        player?.let { resumeMs = if (isLive) 0 else it.currentPosition; it.release() }
-        pv.player = null
-        player = null
-    }
-
-    private fun buildItem(url: String): MediaItem {
-        val b = MediaItem.Builder().setUri(url)
-        extSubFile?.let {
-            b.setSubtitleConfigurations(listOf(
-                MediaItem.SubtitleConfiguration.Builder(Uri.fromFile(it))
-                    .setMimeType(MimeTypes.APPLICATION_SUBRIP).setLanguage(Prefs.subLang)
-                    .setSelectionFlags(C.SELECTION_FLAG_DEFAULT).build()
-            ))
+    private val listener = object : Engine.Listener {
+        override fun onBuffering(buffering: Boolean) { spin.visibility = if (buffering) View.VISIBLE else View.GONE }
+        override fun onReady() {
+            ready = true; retries = 0; spin.visibility = View.GONE
+            ui.removeCallbacks(stallRun)
+            updateChips()
+            engine?.let { e -> matchFrameRate(e.info().fps); e.setAspect(Prefs.aspect); e.applySubtitleStyle() }
         }
-        return b.build()
+        override fun onEnded() { if (!isLive) { Db.saveProgress(key, 0, 1); finish() } }
+        override fun onError(msg: String) { handleProblem(msg) }
+        override fun onPlayState(playing: Boolean) { pPlay.text = if (playing) "Pause" else "Play" }
+    }
+
+    private fun createEngine(kindName: String): Engine {
+        if (kindName == "mpv") {
+            try { return MpvEngine(this, root, pv, isLive) }
+            catch (t: Throwable) { toast("MPV could not start on this device (${t.javaClass.simpleName}). Using ExoPlayer."); fallbackUsed = true }
+        }
+        return ExoEngine(this, pv, root, isLive)
+    }
+
+    private fun startEngine(kindName: String, pos: Long) {
+        if (engine != null) return
+        engine = createEngine(kindName).also { it.listener = listener }
+        start(currentUrl, pos)
+    }
+
+    private fun releaseEngine() {
+        engine?.let { resumeMs = if (isLive) 0 else it.position; runCatching { it.release() } }
+        engine = null
     }
 
     private fun start(url: String, pos: Long) {
-        val p = player ?: return
+        val e = engine ?: return
         currentUrl = url
-        p.setMediaItem(buildItem(url), if (pos > 5000) pos else C.TIME_UNSET)
-        p.prepare()
-        p.playWhenReady = true
+        ready = false; matched = false
+        spin.visibility = View.VISIBLE
+        e.prepare(url, pos)
+        e.playWhenReady = true
+        e.setAspect(Prefs.aspect); e.applySubtitleStyle()
+        ui.removeCallbacks(stallRun); ui.postDelayed(stallRun, 15_000)
+    }
+
+    /** Nothing playing 15 s after start: try the other engine (once), if allowed in Settings. */
+    private val stallRun = Runnable { if (!ready) handleProblem("no picture after 15 s") }
+
+    private fun handleProblem(reason: String) {
+        if (isLive && retries++ < 2 && engine is ExoEngine) { ui.postDelayed({ start(currentUrl, 0) }, 1500); return }
+        if (Prefs.autoFallback && !fallbackUsed) { switchEngine(reason) }
+        else toast("Playback problem: $reason" + if (!fallbackUsed && !Prefs.autoFallback) "  (enable auto fallback in Settings)" else "")
+    }
+
+    /** Move this stream to the other engine at the current position. */
+    private fun switchEngine(reason: String) {
+        fallbackUsed = true
+        val toMpv = engine !is MpvEngine
+        val pos = if (isLive) 0 else (engine?.position ?: resumeMs)
+        toast("Switching to ${if (toMpv) "MPV" else "ExoPlayer"}: $reason")
+        engine?.let { runCatching { it.release() } }
+        engine = null
+        engine = createEngine(if (toMpv) "mpv" else "exo").also { it.listener = listener }
+        start(currentUrl, pos)
+    }
+
+    private fun matchFrameRate(fps: Float) {
+        if (matched || !Prefs.matchFps || fps < 20f) return
+        matched = true
+        runCatching {
+            val d = windowManager.defaultDisplay
+            val cur = d.mode
+            val best = d.supportedModes.filter { it.physicalWidth == cur.physicalWidth && it.physicalHeight == cur.physicalHeight }
+                .minByOrNull { m -> listOf(1f, 2f, 2.5f).minOf { k -> abs(m.refreshRate - fps * k) } }
+            if (best != null && best.modeId != cur.modeId) window.attributes = window.attributes.also { it.preferredDisplayModeId = best.modeId }
+        }
     }
 
     private fun saveProgress() {
-        val p = player ?: return
+        val e = engine ?: return
         if (isLive) return
-        val dur = p.duration.takeIf { it != C.TIME_UNSET } ?: return
-        if (p.currentPosition > 5000) Db.saveProgress(key, p.currentPosition, dur)
+        val dur = e.duration
+        if (dur > 0 && e.position > 5000) Db.saveProgress(key, e.position, dur)
     }
 
     private var tick = 0
@@ -232,30 +233,29 @@ class PlayerActivity : BaseActivity() {
         updateChips()
         focus?.requestFocus()
         ui.removeCallbacks(hideOverlay)
-        if (player?.playWhenReady != false) ui.postDelayed(hideOverlay, 5000)
+        if (engine?.playWhenReady != false) ui.postDelayed(hideOverlay, 5000)
     }
 
     private fun updateOverlay(preview: Long?, previewDur: Long) {
-        val p = player ?: return
-        if (isLive) { pTime.text = "LIVE"; return }
-        val dur = if (previewDur > 0) previewDur else p.duration.takeIf { it != C.TIME_UNSET } ?: 0L
-        val pos = preview ?: p.currentPosition
+        val e = engine ?: return
+        if (isLive) { pTime.text = "LIVE  ·  ${e.name}"; return }
+        val dur = if (previewDur > 0) previewDur else e.duration
+        val pos = preview ?: e.position
         pBar.progress = if (dur > 0) (pos * 1000 / dur).toInt() else 0
-        pTime.text = "${fmt(pos)} / ${fmt(dur)}" + if (preview != null) "     ${if (preview >= p.currentPosition) "▶▶" else "◀◀"} ${Prefs.seekStep}s" else ""
+        pTime.text = "${fmt(pos)} / ${fmt(dur)}" + if (preview != null) "     ${if (preview >= e.position) "▶▶ ${Prefs.ffStep}s" else "◀◀ ${Prefs.rwStep}s"}" else "     ${e.name}"
     }
 
-    /** Resolution / frame rate / audio layout chips from the playing formats. */
+    /** Resolution / codec / frame rate / audio layout chips from the playing streams. */
     private fun updateChips() {
-        val p = player ?: return
-        val v = p.videoFormat; val a = p.audioFormat
+        val e = engine ?: return
+        val i = e.info()
         val list = ArrayList<String>()
-        if (v != null && v.height > 0) list += when { v.height >= 2000 -> "4K"; v.height >= 1000 -> "FULL HD"; v.height >= 700 -> "HD"; else -> "SD" }
-        if (v?.sampleMimeType != null) list += when (v.sampleMimeType) { MimeTypes.VIDEO_H265 -> "HEVC"; MimeTypes.VIDEO_H264 -> "H.264"; MimeTypes.VIDEO_AV1 -> "AV1"; else -> "" }
-        if (v != null && v.frameRate > 0) list += "%.2f Hz".format(v.frameRate)
-        if (a != null && a.channelCount > 0) list += when (a.channelCount) { 1 -> "MONO"; 2 -> "STEREO"; 6 -> "5.1"; 8 -> "7.1"; else -> "${a.channelCount}ch" }
-        val shown = list.filter { it.isNotEmpty() }
+        if (i.height > 0) list += when { i.height >= 2000 -> "4K"; i.height >= 1000 -> "FULL HD"; i.height >= 700 -> "HD"; else -> "SD" }
+        i.codec?.let { list += it }
+        if (i.fps > 0) list += "%.2f Hz".format(i.fps)
+        if (i.channels > 0) list += when (i.channels) { 1 -> "MONO"; 2 -> "STEREO"; 6 -> "5.1"; 8 -> "7.1"; else -> "${i.channels}ch" }
         chips.removeAllViews()
-        for (t in shown) chips.addView(TextView(this).apply {
+        for (t in list) chips.addView(TextView(this).apply {
             text = t; textSize = 11f; setTextColor(getColor(R.color.text)); setBackgroundResource(R.drawable.chip_bg)
             setPadding(dp(context, 7), dp(context, 2), dp(context, 7), dp(context, 2))
             layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { rightMargin = dp(context, 6) }
@@ -279,8 +279,8 @@ class PlayerActivity : BaseActivity() {
     override fun dispatchKeyEvent(e: KeyEvent): Boolean {
         if (chanList.visibility == View.VISIBLE || side.visibility == View.VISIBLE) return super.dispatchKeyEvent(e)
         if (e.action != KeyEvent.ACTION_DOWN) return super.dispatchKeyEvent(e)
-        val p = player ?: return super.dispatchKeyEvent(e)
-        val canSeek = p.isCurrentMediaItemSeekable && !isLive
+        val p = engine ?: return super.dispatchKeyEvent(e)
+        val canSeek = p.seekable && !isLive
         val f = currentFocus
         val inOverlay = overlay.visibility == View.VISIBLE && f != null && f.isIn(overlay)
         if (inOverlay) {
@@ -338,7 +338,7 @@ class PlayerActivity : BaseActivity() {
     private fun startChannel(c: Item) {
         key = c.url; title = c.name; group = c.group; baseName = c.name
         setTitles(); Db.touchLive(c.url)
-        retries = 0
+        retries = 0; fallbackUsed = false
         start(c.url, 0)
     }
 
@@ -374,13 +374,13 @@ class PlayerActivity : BaseActivity() {
         layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(c, 3) }
         setPadding(dp(c, 12), dp(c, 10), dp(c, 12), dp(c, 10))
         setBackgroundResource(R.drawable.row_bg)
-        isFocusable = true; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; textSize = 14f; gravity = Gravity.CENTER_VERTICAL
+        isFocusable = true; maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END; textSize = 14f; gravity = Gravity.CENTER_VERTICAL
         setTextColor(c.getColor(R.color.text))
     }
 
-    // ---- side panel: subtitles, audio, aspect ---------------------------------------------------
+    // ---- side panel: subtitles, audio, aspect --------------------------------------------------
 
-    private class Entry(val label: String, val checked: Boolean = false, val keepOpen: Boolean = false, val action: () -> Unit)
+    private class Entry(val label: String, val checked: Boolean = false, val keepOpen: Boolean = false, val dim: Boolean = false, val action: () -> Unit)
 
     private fun showSide(titleText: String, entries: () -> List<Entry>) {
         sideTitle.text = titleText
@@ -392,6 +392,7 @@ class PlayerActivity : BaseActivity() {
                 override fun onBindViewHolder(h: RecyclerView.ViewHolder, i: Int) {
                     val tv = h.itemView as TextView
                     tv.text = (if (list[i].checked) "✓   " else "     ") + list[i].label
+                    tv.alpha = if (list[i].dim) 0.5f else 1f
                     tv.setOnClickListener {
                         list[i].action()
                         if (list[i].keepOpen) render(i) else side.visibility = View.GONE
@@ -405,84 +406,43 @@ class PlayerActivity : BaseActivity() {
         render()
     }
 
-    private fun trackEntries(type: Int, includeOff: Boolean): List<Entry> {
-        val p = player ?: return emptyList()
+    private fun otherEngineName() = if (engine is MpvEngine) "ExoPlayer" else "MPV"
+
+    private fun trackEntries(audio: Boolean): List<Entry> {
+        val e = engine ?: return emptyList()
         val out = ArrayList<Entry>()
-        if (includeOff) out += Entry("Off", p.trackSelectionParameters.disabledTrackTypes.contains(type)) {
-            p.trackSelectionParameters = p.trackSelectionParameters.buildUpon().setTrackTypeDisabled(type, true).build()
+        if (!audio) out += Entry("Off", e.textDisabled()) { e.disableText() }
+        for (t in e.tracks(audio)) {
+            out += if (t.supported) Entry(t.label, t.selected) { e.select(audio, t) }
+            else Entry(t.label + "  (not supported here)", false, dim = true) { toast("${e.name} can't decode this track on this device. Use 'Try ${otherEngineName()}' below.") }
         }
-        var n = 0
-        for (g in p.currentTracks.groups) {
-            if (g.type != type) continue
-            for (t in 0 until g.length) {
-                if (!g.isTrackSupported(t)) continue
-                out += Entry(trackLabel(g.getTrackFormat(t), n++), g.isTrackSelected(t) && !p.trackSelectionParameters.disabledTrackTypes.contains(type)) {
-                    p.trackSelectionParameters = p.trackSelectionParameters.buildUpon().setTrackTypeDisabled(type, false).setOverrideForType(TrackSelectionOverride(g.mediaTrackGroup, t)).build()
-                }
-            }
-        }
+        out += Entry("Try ${otherEngineName()} engine for this stream") { fallbackUsed = false; switchEngine("manual") }
         return out
     }
 
-    private fun openAudio() = showSide("Audio") { trackEntries(C.TRACK_TYPE_AUDIO, false).ifEmpty { listOf(Entry("No selectable audio tracks") {}) } }
+    private fun openAudio() = showSide("Audio") { trackEntries(true) }
 
     private fun openSubs() = showSide("Subtitles") {
-        trackEntries(C.TRACK_TYPE_TEXT, true) + listOf(
+        val e = engine
+        trackEntries(false) + listOf(
             Entry("Find subtitles online…") { searchSubs() },
-            Entry("Size:  ${Prefs.subSize}%", keepOpen = true) { Prefs.subSize = next(sizes, Prefs.subSize); applySubtitleStyle() },
+            Entry("Size:  ${Prefs.subSize}%", keepOpen = true) { Prefs.subSize = next(sizes, Prefs.subSize); e?.applySubtitleStyle() },
             Entry("Colour:  ${SettingsActivity.colorName(Prefs.subColor)}", keepOpen = true) {
-                val cols = SettingsActivity.colors.map { it.second }; Prefs.subColor = next(cols, Prefs.subColor); applySubtitleStyle()
+                val cols = SettingsActivity.colors.map { it.second }; Prefs.subColor = next(cols, Prefs.subColor); e?.applySubtitleStyle()
             },
-            Entry("Delay:  ${SettingsActivity.delayLabel(Prefs.subDelayMs)}  (downloaded subs)", keepOpen = true) {
+            Entry("Delay:  ${SettingsActivity.delayLabel(Prefs.subDelayMs)}" + if (e?.delayAppliesToEmbedded == true) "" else "  (downloaded subs)", keepOpen = true) {
                 Prefs.subDelayMs = next(SettingsActivity.delays, Prefs.subDelayMs, 4)   // 1 s steps
-                if (extSrt != null) applyExternalSub()
+                e?.setSubDelay(Prefs.subDelayMs)
             },
         )
     }
 
-    private fun openAspect() = showSide("Aspect ratio") { aspectNames.mapIndexed { i, n -> Entry(n, Prefs.aspect == i, keepOpen = true) { Prefs.aspect = i; applyAspect() } } }
+    private fun openAspect() = showSide("Aspect ratio") { aspectNames.mapIndexed { i, n -> Entry(n, Prefs.aspect == i, keepOpen = true) { Prefs.aspect = i; engine?.setAspect(i) } } }
 
     private fun <T> next(list: List<T>, cur: T, step: Int = 1): T = list[(list.indexOf(cur).coerceAtLeast(0) + step) % list.size]
 
     private val sizes = listOf(75, 100, 125, 150, 200)
     private val aspectNames = listOf("Fit", "Fill", "Zoom", "16:9", "4:3")
-
-    private fun applySubtitleStyle() {
-        pv.subtitleView?.apply {
-            setStyle(CaptionStyleCompat(Prefs.subColor, 0, 0, CaptionStyleCompat.EDGE_TYPE_OUTLINE, 0xFF000000.toInt(), null))
-            setFractionalTextSize(SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * Prefs.subSize / 100f)
-        }
-    }
-
-    private fun applyAspect() {
-        val lp = pv.layoutParams as FrameLayout.LayoutParams
-        val cw = root.width; val ch = root.height
-        val mode = Prefs.aspect
-        when (mode) {
-            0, 1, 2 -> {
-                pv.resizeMode = when (mode) { 0 -> AspectRatioFrameLayout.RESIZE_MODE_FIT; 1 -> AspectRatioFrameLayout.RESIZE_MODE_FILL; else -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM }
-                lp.width = ViewGroup.LayoutParams.MATCH_PARENT; lp.height = ViewGroup.LayoutParams.MATCH_PARENT
-            }
-            else -> {
-                if (cw == 0 || ch == 0) return
-                val r = if (mode == 3) 16f / 9f else 4f / 3f
-                pv.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FILL   // stretch the video into a box of the chosen ratio
-                if (cw.toFloat() / ch > r) { lp.height = ch; lp.width = (ch * r).toInt() } else { lp.width = cw; lp.height = (cw / r).toInt() }
-            }
-        }
-        lp.gravity = Gravity.CENTER
-        pv.layoutParams = lp
-    }
-
-    private fun trackLabel(f: Format, n: Int): String {
-        val lang = f.language?.takeIf { it != "und" }?.let { Locale(it).displayLanguage }
-        val extra = buildList {
-            f.label?.let { add(it) }
-            if (f.channelCount > 0 && MimeTypes.isAudio(f.sampleMimeType)) add(if (f.channelCount == 6) "5.1" else if (f.channelCount == 8) "7.1" else "${f.channelCount}ch")
-            f.sampleMimeType?.substringAfterLast('/')?.let { add(it.uppercase()) }
-        }.distinct().joinToString(" · ")
-        return listOfNotNull("Track ${n + 1}" + (lang?.let { " [$it]" } ?: ""), extra.ifEmpty { null }).joinToString("  —  ")
-    }
 
     // ---- OpenSubtitles --------------------------------------------------------------------------
 
@@ -506,22 +466,9 @@ class PlayerActivity : BaseActivity() {
         scope.launch {
             val res = withContext(Dispatchers.IO) { runCatching { OpenSubs.download(h.fileId) } }
             res.onFailure { toast(it.message ?: "Download failed"); return@launch }
-            extSrt = res.getOrThrow()
-            applyExternalSub()
+            hasExtSub = true
+            engine?.addExternalSub(res.getOrThrow(), Prefs.subDelayMs)
+            toast("Subtitles applied")
         }
-    }
-
-    /** Writes the (delay-shifted) SRT and re-attaches it at the current position. */
-    private fun applyExternalSub() {
-        val raw = extSrt ?: return
-        val p = player ?: return
-        val f = File(cacheDir, "ext_${System.nanoTime()}.srt")
-        f.writeText(Srt.shift(raw, Prefs.subDelayMs))
-        extSubFile?.delete()
-        extSubFile = f
-        val pos = p.currentPosition; val play = p.playWhenReady
-        p.setMediaItem(buildItem(currentUrl), pos)
-        p.prepare(); p.playWhenReady = play
-        toast("Subtitles applied")
     }
 }

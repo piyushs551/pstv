@@ -2,3 +2,4 @@
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
 -dontwarn javax.annotation.**
+-keep class dev.jdtech.mpv.** { *; }

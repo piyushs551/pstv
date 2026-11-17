@@ -27,6 +27,15 @@ object Prefs {
 
     /** Seek step in seconds: 5, 10, 30 or 60. */
     var seekStep: Int get() = i("seek", 10); set(v) = put("seek", v)
+    /** Fast-forward / rewind steps in seconds (default: the old single seek step). */
+    var ffStep: Int get() = i("ff", i("seek", 10)); set(v) = put("ff", v)
+    var rwStep: Int get() = i("rw", i("seek", 10)); set(v) = put("rw", v)
+    /** "exo" or "mpv", separately for live and VOD. */
+    var engineLive: String get() = s("eng_live", "exo"); set(v) = put("eng_live", v)
+    var engineVod: String get() = s("eng_vod", "exo"); set(v) = put("eng_vod", v)
+    var autoFallback: Boolean get() = i("fallback", 1) == 1; set(v) = put("fallback", if (v) 1 else 0)
+    var lowLatency: Boolean get() = i("lowlat", 0) == 1; set(v) = put("lowlat", if (v) 1 else 0)
+    var matchFps: Boolean get() = i("matchfps", 0) == 1; set(v) = put("matchfps", if (v) 1 else 0)
     var cacheMb: Int get() = i("cachemb", 100); set(v) = put("cachemb", v)
     /** 0 Fit, 1 Fill, 2 Zoom, 3 16:9, 4 4:3 */
     var aspect: Int get() = i("aspect", 0); set(v) = put("aspect", v)

@@ -121,13 +121,18 @@ class SettingsActivity : BaseActivity() {
         }
         row("Clear image cache", { "Frees ${Images.diskBytes() / 1_048_576} MB" }) { Images.clear(); toast("Image cache cleared") }
 
-        section("PLAYBACK")
-        row("Seek step", { "${Prefs.seekStep} seconds" }) {
-            choose("Seek step", listOf(5, 10, 30, 60).map { "$it seconds" to it }, Prefs.seekStep) { Prefs.seekStep = it }
-        }
+        section("PLAYER · LIVE")
+        row("Player engine", { engName(Prefs.engineLive) }) { choose("Live player engine", engines, Prefs.engineLive) { Prefs.engineLive = it } }
+        row("Low latency", { if (Prefs.lowLatency) "On (smaller buffer, faster start, less tolerance for a weak connection)" else "Off" }) { Prefs.lowLatency = !Prefs.lowLatency }
 
-        row("Buffer size", { "${Prefs.bufferMb} MB" }) { choose("Buffer size (bigger = smoother, more RAM)", listOf("Small · 20 MB" to 20, "Normal · 32 MB" to 32, "Large · 64 MB" to 64), Prefs.bufferMb) { Prefs.bufferMb = it } }
+        section("PLAYER · VOD (movies and series)")
+        row("Player engine", { engName(Prefs.engineVod) }) { choose("VOD player engine", engines, Prefs.engineVod) { Prefs.engineVod = it } }
+        row("Fast-forward step", { "${Prefs.ffStep} seconds" }) { choose("Fast-forward step", listOf(5, 10, 30, 60).map { "$it seconds" to it }, Prefs.ffStep) { Prefs.ffStep = it } }
+        row("Rewind step", { "${Prefs.rwStep} seconds" }) { choose("Rewind step", listOf(5, 10, 30, 60).map { "$it seconds" to it }, Prefs.rwStep) { Prefs.rwStep = it } }
 
+        section("PLAYER · BOTH")
+        row("Auto fallback", { if (Prefs.autoFallback) "On: if a stream errors or shows nothing for 15 s, retry it with the other engine" else "Off" }) { Prefs.autoFallback = !Prefs.autoFallback }
+        row("Match framerate", { if (Prefs.matchFps) "On (asks the TV for a matching refresh rate if it offers one)" else "Off" }) { Prefs.matchFps = !Prefs.matchFps }
         section("SUBTITLES")
         row("OpenSubtitles API key", { mask(Prefs.osKey) }) { edit("OpenSubtitles API key", Prefs.osKey, password = true) { Prefs.osKey = it } }
         row("OpenSubtitles username", { orNotSet(Prefs.osUser) }) { edit("OpenSubtitles username", Prefs.osUser) { Prefs.osUser = it } }
@@ -167,6 +172,9 @@ class SettingsActivity : BaseActivity() {
                 }.show()
         }.show()
     }
+
+    private val engines = listOf("ExoPlayer (lightweight, default)" to "exo", "MPV (plays more formats and audio tracks)" to "mpv")
+    private fun engName(k: String) = engines.first { it.second == k }.first
 
     companion object {
         val colors = listOf("White" to 0xFFFFFFFF.toInt(), "Yellow" to 0xFFFFE94D.toInt(), "Cyan" to 0xFF5CE1FF.toInt(), "Green" to 0xFF7DFF8A.toInt())
