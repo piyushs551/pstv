@@ -39,6 +39,7 @@ class HomeActivity : BaseActivity(), CardHost {
     private var rows = ArrayList<RowDesc>()
     private var shownVersion = -1
     private var buildToken = 0
+    private var chromeShown = true
 
     private val repoListener: () -> Unit = {
         status.text = listOf(Repo.status, Epg.status).firstOrNull { it.isNotEmpty() } ?: ""
@@ -87,14 +88,36 @@ class HomeActivity : BaseActivity(), CardHost {
 
     override fun onDestroy() { Repo.listeners.remove(repoListener); handler.removeCallbacksAndMessages(null); super.onDestroy() }
 
+    private fun inTabs(v: View?): Boolean { var x: View? = v; while (x != null) { if (x === tabs) return true; x = x.parent as? View }; return false }
+
+    /** Back: deep in a page -> top + tab bar focused; on a non-Home tab -> Home; on Home -> exit. */
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (tab != 1) { showTab(1, focus = false); tabs.getChildAt(1).requestFocus() } else super.onBackPressed()
+        val onTabs = inTabs(currentFocus)
+        when {
+            !onTabs && (tab == 1 || tab == 4 || tab == 5) -> {
+                (rowsRv.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(0, 0)
+                setChrome(true); focusTabs()
+            }
+            !onTabs -> focusTabs()
+            tab != 1 -> { showTab(1, focus = false); tabs.getChildAt(1).requestFocus() }
+            else -> super.onBackPressed()
+        }
+    }
+
+    /** Tab bar and hero are shown on the first row only; below it they fade/collapse to give rows more room. */
+    private fun setChrome(show: Boolean, force: Boolean = false) {
+        if (chromeShown == show && !force) return
+        chromeShown = show
+        tabs.animate().cancel()
+        if (Anim.dur == 0L) tabs.alpha = if (show) 1f else 0f else tabs.animate().alpha(if (show) 1f else 0f).setDuration(Anim.dur).start()
+        findViewById<View>(R.id.hero_area).visibility = if (Prefs.hero && show) View.VISIBLE else View.GONE
+        rowsPage.setPadding(0, if (show) (if (Prefs.hero) 0 else dp(this, 84)) else Tokens.pxi(this, R.dimen.safe_v), 0, 0)
     }
 
     // ---- tabs -----------------------------------------------------------------------------------
 
-    fun focusTabs() { tabs.getChildAt(tab).requestFocus() }
+    fun focusTabs() { setChrome(true); tabs.getChildAt(tab).requestFocus() }
 
     private fun focusPage() {
         when (tab) {
@@ -112,8 +135,7 @@ class HomeActivity : BaseActivity(), CardHost {
         rowsPage.visibility = if (isRows) View.VISIBLE else View.GONE
         livePageView.visibility = if (i == 2) View.VISIBLE else View.GONE
         epgPageView.visibility = if (i == 3) View.VISIBLE else View.GONE
-        findViewById<View>(R.id.hero_area).visibility = if (Prefs.hero) View.VISIBLE else View.GONE
-        rowsPage.setPadding(0, if (Prefs.hero) 0 else dp(this, 56), 0, 0)
+        setChrome(true, force = true)
         when (i) {
             1, 4, 5 -> buildRows(i, focus)
             2 -> live.show(focus)
@@ -176,6 +198,7 @@ class HomeActivity : BaseActivity(), CardHost {
     private fun focusRow(index: Int, tries: Int = 0) {
         val a = adapter ?: return
         if (index !in rows.indices) return
+        setChrome(index == 0)
         (rowsRv.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(index, 0)
         val vh = rowsRv.findViewHolderForAdapterPosition(index) as? RowsAdapter.VH
         if (vh == null) { if (tries < 8) rowsRv.post { focusRow(index, tries + 1) }; return }
@@ -281,7 +304,7 @@ class Hero(private val act: HomeActivity) {
 
     private fun swap(url: String?, item: Item, my: Int) {
         if (my != token) return
-        if (url == null) back.setImageDrawable(NameTile(item.name))
+        if (url == null) back.setImageDrawable(NameTile(item.name, act, when (item.kind) { Kind.LIVE -> R.drawable.ic_live; Kind.MOVIE -> R.drawable.ic_movies; Kind.SERIES -> R.drawable.ic_shows }))
         shownUrl = url
         back.animate().cancel(); front.animate().cancel()
         if (Anim.dur == 0L) { back.alpha = 1f; front.alpha = 0f }

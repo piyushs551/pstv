@@ -95,7 +95,7 @@ class CardAdapter(private val row: RowDesc, private val host: CardHost) : Recycl
         h.img.scaleType = if (logoOnly) ImageView.ScaleType.FIT_CENTER else ImageView.ScaleType.CENTER_CROP
         val pad = if (logoOnly) dp(c, 24) else 0
         h.img.setPadding(pad, pad / 2, pad, pad / 2)
-        Images.card(h.img, item.cardArt, cleanTitle(item.name), w, ht)
+        Images.card(h.img, item.cardArt, cleanTitle(item.name), w, ht, when (item.kind) { Kind.LIVE -> R.drawable.ic_live; Kind.MOVIE -> R.drawable.ic_movies; Kind.SERIES -> R.drawable.ic_shows })
         h.label.text = cleanTitle(item.name)
         h.sub.text = Card.sub(item)
         h.caption.animate().cancel(); h.caption.alpha = 0f

@@ -6,7 +6,20 @@
 - Player: ExoPlayer + MPV engines, auto fallback (error or 15 s stall), Live/VOD settings, FF/RW steps, low latency, match framerate, track lists incl. unsupported (greyed).
 - Windows scripts + README. Robolectric layout previews.
 
-## Next (design-language pass, in stages; commit after each)
+## USER FEEDBACK BATCH (from on-device use + Prime Video reference shots) — work in this order
+Stage A (bugs): 
+ A1 Back button: deep row -> scroll to top, show tab bar, focus current tab; Back again (non-Home tab) -> Home tab; Back on Home -> exit. 
+ A2 Down arrow "skipped a row": outer rows RecyclerView must clip (previous row peeked over hero); one row per press.
+ A3 Tab bar fades away + hero collapses when focus moves below row 0 (more room); returns on row 0 / Back.
+ A4 Live tab category list scroll broken (notifyDataSetChanged on focus): update only old/new selected.
+ A5 Live player: Left opens channel list.
+ A6 Tiles without art show full name + kind icon, not initials.
+Stage B (density + Prime layout): UI looks too zoomed (~800x600): add Settings > UI size (Compact default via density scale); landscape 16:9 cards for ALL kinds (TMDB backdrops; supersedes 2:3 posters) so ~2 rows show; slimmer text top menu; left icon rail (Search, Favorites); less chunky.
+Stage C (content): Left key in Movies/TV tabs opens a category list (recently added, top, groups) to jump; more TMDB rows (top rated/popular/top-10 style); Settings: reorder/hide categories per tab (e.g. Indian first).
+Stage D: Series detail like Prime: info on top, season selector (dropdown/pills), episodes as landscape cards with episode info.
+Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending from user.
+
+## Earlier plan (design-language pass, in stages; commit after each)
 1. DONE — Tokens + typography + icons (res/values/tokens.xml, Tokens.kt/Fonts.kt, Outfit in assets/fonts, 16 Material Symbols Rounded vectors ic_*.xml).
 2. DONE — Cards: 2:3 posters vs 16:9, rounded, focus ring + shadow, dimmed neighbours, title on focused card only.
 3. DONE — Pills, icon tabs, accent only on Play/primary + focus, TV-safe margins, type scale via tokens.

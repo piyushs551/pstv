@@ -47,18 +47,22 @@ class LivePage(private val act: HomeActivity, root: View) : CardHost {
             }
             cats = list
             selected = selected.coerceIn(0, maxOf(0, cats.size - 1))
+            shownSel = -1
             catsRv.adapter?.notifyDataSetChanged()
             loadSelected()
             if (focus) focusCat()
         }
     }
 
+    private var shownSel = -1
+
     private fun loadSelected() {
         val c = cats.getOrNull(selected) ?: return
         val r = RowDesc("live:${c.title}", c.title, load = c.load)
         row = r
         grid.adapter = CardAdapter(r, this).also { it.loadMore() }
-        catsRv.adapter?.notifyDataSetChanged()
+        val prev = shownSel; shownSel = selected
+        catsRv.adapter?.let { a -> if (prev in cats.indices && prev != selected) a.notifyItemChanged(prev); a.notifyItemChanged(selected) }
     }
 
     private fun focusCat() = catsRv.post { (catsRv.layoutManager as LinearLayoutManager).findViewByPosition(selected)?.requestFocus() }

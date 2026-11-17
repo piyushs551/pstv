@@ -8,6 +8,10 @@ import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.Shader
 import android.graphics.Typeface
+import android.text.Layout
+import android.text.StaticLayout
+import android.text.TextPaint
+import android.text.TextUtils
 import android.graphics.drawable.Drawable
 import android.widget.ImageView
 import coil.ImageLoader
@@ -50,8 +54,8 @@ object Images {
     }
 
     /** Size-matched load into a card. Re-binding the same view cancels the previous request. */
-    fun card(v: ImageView, url: String?, name: String, w: Int, h: Int) {
-        val tile = NameTile(name)
+    fun card(v: ImageView, url: String?, name: String, w: Int, h: Int, icon: Int = 0) {
+        val tile = NameTile(name, v.context, icon)
         if (url.isNullOrBlank()) { v.setImageDrawable(tile); return }
         v.load(url, loader) {
             size(w, h)
@@ -72,21 +76,37 @@ object Images {
     }
 }
 
-/** Generated tile: gradient from the title's hash plus its initials. */
-class NameTile(private val name: String) : Drawable() {
+/** Generated tile for items without art: gradient from the title's hash, a kind icon and the full name (no initials). */
+class NameTile(private val name: String, private val ctx: Context? = null, private val iconRes: Int = 0) : Drawable() {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xCCFFFFFF.toInt(); typeface = Typeface.DEFAULT_BOLD; textAlign = Paint.Align.CENTER }
-    private val initials = name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }.take(2).joinToString("") { it.first().uppercase() }.ifEmpty { "?" }
+    private val text = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xE6FFFFFF.toInt(); typeface = Fonts.medium() }
+    private val icon = if (ctx != null && iconRes != 0) ctx.getDrawable(iconRes)?.mutate()?.also { it.setTint(0xB3FFFFFF.toInt()) } else null
+    private var layout: StaticLayout? = null
+    private var layoutW = 0
 
     override fun draw(c: Canvas) {
         val b = bounds
         val hue = ((name.hashCode() and 0x7fffffff) % 360).toFloat()
-        val c1 = android.graphics.Color.HSVToColor(floatArrayOf(hue, 0.55f, 0.42f))
-        val c2 = android.graphics.Color.HSVToColor(floatArrayOf((hue + 40) % 360, 0.6f, 0.22f))
+        val c1 = android.graphics.Color.HSVToColor(floatArrayOf(hue, 0.5f, 0.36f))
+        val c2 = android.graphics.Color.HSVToColor(floatArrayOf((hue + 40) % 360, 0.55f, 0.18f))
         paint.shader = LinearGradient(0f, b.top.toFloat(), b.width().toFloat(), b.bottom.toFloat(), c1, c2, Shader.TileMode.CLAMP)
         c.drawRect(b, paint)
-        text.textSize = minOf(b.width(), b.height()) * 0.38f
-        c.drawText(initials, b.exactCenterX(), b.exactCenterY() - (text.ascent() + text.descent()) / 2, text)
+        val small = b.width() < 160
+        val iconSize = if (small) minOf(b.width(), b.height()) / 2 else (b.height() * 0.22f).toInt().coerceAtLeast(24)
+        val wText = (b.width() * 0.82f).toInt()
+        if (!small) {
+            if (layout == null || layoutW != wText) {
+                text.textSize = (b.height() * 0.11f).coerceAtLeast(14f)
+                layout = StaticLayout.Builder.obtain(name, 0, name.length, text, wText).setAlignment(Layout.Alignment.ALIGN_CENTER).setMaxLines(3).setEllipsize(TextUtils.TruncateAt.END).build()
+                layoutW = wText
+            }
+        }
+        val lh = if (small) 0 else layout?.height ?: 0
+        val gap = if (icon != null && !small) iconSize / 3 else 0
+        val total = (if (icon != null) iconSize else 0) + gap + lh
+        var y = b.top + (b.height() - total) / 2f
+        icon?.let { d -> val x = b.centerX() - iconSize / 2; d.setBounds(x, y.toInt(), x + iconSize, y.toInt() + iconSize); d.draw(c); y += iconSize + gap }
+        if (!small) layout?.let { l -> c.save(); c.translate(b.left + (b.width() - wText) / 2f, y); l.draw(c); c.restore() }
     }
     override fun setAlpha(a: Int) {}
     override fun setColorFilter(f: ColorFilter?) {}

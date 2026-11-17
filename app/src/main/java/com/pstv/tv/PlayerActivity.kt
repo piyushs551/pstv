@@ -294,7 +294,7 @@ class PlayerActivity : BaseActivity() {
             return super.dispatchKeyEvent(e)
         }
         when (e.keyCode) {
-            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_MEDIA_REWIND -> { if (canSeek) seeker.press(-1, e.repeatCount); return true }
+            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_MEDIA_REWIND -> { if (canSeek) seeker.press(-1, e.repeatCount) else if (isLive && e.keyCode == KeyEvent.KEYCODE_DPAD_LEFT && e.repeatCount == 0) showChannels(); return true }
             KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> { if (canSeek) seeker.press(1, e.repeatCount); return true }
             KeyEvent.KEYCODE_DPAD_UP -> { if (isLive) zap(-1) else showOverlay(focus = pPlay); return true }
             KeyEvent.KEYCODE_DPAD_DOWN -> { if (isLive) zap(1) else showOverlay(focus = pPlay); return true }
