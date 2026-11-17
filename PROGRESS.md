@@ -9,7 +9,7 @@
 ## Next (design-language pass, in stages; commit after each)
 1. DONE — Tokens + typography + icons (res/values/tokens.xml, Tokens.kt/Fonts.kt, Outfit in assets/fonts, 16 Material Symbols Rounded vectors ic_*.xml).
 2. DONE — Cards: 2:3 posters vs 16:9, rounded, focus ring + shadow, dimmed neighbours, title on focused card only.
-3. Hero / tabs / buttons: pills, TV-safe margins, accent only for focus + primary actions.
+3. DONE — Pills, icon tabs, accent only on Play/primary + focus, TV-safe margins, type scale via tokens.
 4. Frosted translucent panels (player overlay/side panel, dialogs), Live/EPG/Settings/Detail restyle, previews.
 
 ## Decisions

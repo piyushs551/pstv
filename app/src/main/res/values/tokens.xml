@@ -27,6 +27,7 @@
     <dimen name="radius_card">14dp</dimen>
     <dimen name="radius_panel">16dp</dimen>
     <dimen name="radius_pill">28dp</dimen>
+    <dimen name="radius_chip">8dp</dimen>
 
     <!-- Spacing (4-pt grid) and TV-safe margins (5% overscan on a 960x540 dp screen) -->
     <dimen name="space_xs">4dp</dimen>

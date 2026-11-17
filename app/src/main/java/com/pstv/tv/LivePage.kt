@@ -74,7 +74,7 @@ class LivePage(private val act: HomeActivity, root: View) : CardHost {
                 layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(context, 4) }
                 setPadding(dp(context, 14), dp(context, 11), dp(context, 14), dp(context, 11))
                 setBackgroundResource(R.drawable.cat_bg)
-                isFocusable = true; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; textSize = 14f; gravity = Gravity.CENTER_VERTICAL
+                isFocusable = true; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; type(R.dimen.type_body); gravity = Gravity.CENTER_VERTICAL
                 setTextColor(resources.getColorStateList(R.drawable.tab_text, null))
             }
             return object : RecyclerView.ViewHolder(tv) {}

@@ -140,7 +140,7 @@ class PlayerActivity : BaseActivity() {
         }
         override fun onEnded() { if (!isLive) { Db.saveProgress(key, 0, 1); finish() } }
         override fun onError(msg: String) { handleProblem(msg) }
-        override fun onPlayState(playing: Boolean) { pPlay.text = if (playing) "Pause" else "Play" }
+        override fun onPlayState(playing: Boolean) { pPlay.text = if (playing) "Pause" else "Play"; pPlay.setCompoundDrawablesWithIntrinsicBounds(if (playing) R.drawable.ic_pause else R.drawable.ic_play, 0, 0, 0) }
     }
 
     private fun createEngine(kindName: String): Engine {
@@ -256,7 +256,7 @@ class PlayerActivity : BaseActivity() {
         if (i.channels > 0) list += when (i.channels) { 1 -> "MONO"; 2 -> "STEREO"; 6 -> "5.1"; 8 -> "7.1"; else -> "${i.channels}ch" }
         chips.removeAllViews()
         for (t in list) chips.addView(TextView(this).apply {
-            text = t; textSize = 11f; setTextColor(getColor(R.color.text)); setBackgroundResource(R.drawable.chip_bg)
+            text = t; type(R.dimen.type_micro); setTextColor(getColor(R.color.text)); setBackgroundResource(R.drawable.chip_bg)
             setPadding(dp(context, 7), dp(context, 2), dp(context, 7), dp(context, 2))
             layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { rightMargin = dp(context, 6) }
         })
@@ -374,7 +374,7 @@ class PlayerActivity : BaseActivity() {
         layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(c, 3) }
         setPadding(dp(c, 12), dp(c, 10), dp(c, 12), dp(c, 10))
         setBackgroundResource(R.drawable.row_bg)
-        isFocusable = true; maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END; textSize = 14f; gravity = Gravity.CENTER_VERTICAL
+        isFocusable = true; maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END; type(R.dimen.type_body); gravity = Gravity.CENTER_VERTICAL
         setTextColor(c.getColor(R.color.text))
     }
 

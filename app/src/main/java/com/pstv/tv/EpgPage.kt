@@ -78,7 +78,7 @@ class EpgPage(private val act: HomeActivity, root: View) {
         head.removeAllViews()
         for (m in 0 until windowMin step 30) {
             head.addView(TextView(act).apply {
-                text = fmt.format(Date(winStart + m * 60_000L)); textSize = 12f; setTextColor(act.getColor(R.color.text_dim))
+                text = fmt.format(Date(winStart + m * 60_000L)); type(R.dimen.type_caption); setTextColor(act.getColor(R.color.text_dim))
                 layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { leftMargin = dp(act, labelDp + 24 + m * minuteDp) }
             })
         }
@@ -117,7 +117,7 @@ class EpgPage(private val act: HomeActivity, root: View) {
                 orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
                 layoutParams = LinearLayout.LayoutParams(dp(c, labelDp), ViewGroup.LayoutParams.MATCH_PARENT)
                 addView(ImageView(c).apply { id = R.id.card_img; layoutParams = LinearLayout.LayoutParams(dp(c, 44), dp(c, 30)); scaleType = ImageView.ScaleType.FIT_CENTER })
-                addView(TextView(c).apply { id = R.id.card_label; textSize = 11f; maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END; setTextColor(c.getColor(R.color.text)); setPadding(dp(c, 6), 0, dp(c, 4), 0) })
+                addView(TextView(c).apply { id = R.id.card_label; type(R.dimen.type_micro); maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END; setTextColor(c.getColor(R.color.text)); setPadding(dp(c, 6), 0, dp(c, 4), 0) })
             }
             row.addView(label)
             row.addView(FrameLayout(c).apply { layoutParams = LinearLayout.LayoutParams(dp(c, windowMin * minuteDp), ViewGroup.LayoutParams.MATCH_PARENT) })
@@ -149,7 +149,7 @@ class EpgPage(private val act: HomeActivity, root: View) {
 
     private fun block(c: android.content.Context, ch: Item, pos: Int, title: String, time: String, w: Int, left: Int): View {
         return TextView(c).apply {
-            text = "$title\n$time"; textSize = 11f; maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END
+            text = "$title\n$time"; type(R.dimen.type_micro); maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END
             setTextColor(c.getColor(R.color.text)); setBackgroundResource(R.drawable.row_bg); isFocusable = true
             setPadding(dp(c, 8), dp(c, 4), dp(c, 6), dp(c, 4)); gravity = Gravity.CENTER_VERTICAL
             layoutParams = FrameLayout.LayoutParams(w, dp(c, 52)).apply { leftMargin = left; topMargin = dp(c, 3) }

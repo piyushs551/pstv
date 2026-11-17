@@ -4,14 +4,14 @@
     android:layout_height="match_parent"
     android:background="@color/bg"
     android:orientation="vertical"
-    android:paddingTop="16dp">
+    android:paddingTop="@dimen/safe_v">
 
     <EditText
         android:id="@+id/query"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="40dp"
-        android:layout_marginRight="40dp"
+        android:layout_marginLeft="@dimen/safe_h"
+        android:layout_marginRight="@dimen/safe_h"
         android:background="@drawable/row_bg"
         android:hint="Search channels, movies and series"
         android:imeOptions="actionSearch"
@@ -22,16 +22,16 @@
         android:singleLine="true"
         android:textColor="@color/text"
         android:textColorHint="@color/text_dim"
-        android:textSize="18sp" />
+        android:textSize="@dimen/type_title" />
 
     <TextView
         android:id="@+id/count"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="8dp"
-        android:paddingLeft="40dp"
+        android:paddingLeft="@dimen/safe_h"
         android:textColor="@color/text_dim"
-        android:textSize="13sp" />
+        android:textSize="@dimen/type_caption" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/results"
@@ -40,7 +40,7 @@
         android:layout_weight="1"
         android:clipChildren="false"
         android:clipToPadding="false"
-        android:paddingLeft="32dp"
-        android:paddingRight="24dp"
+        android:paddingLeft="@dimen/safe_h"
+        android:paddingRight="@dimen/safe_h"
         android:paddingTop="10dp" />
 </LinearLayout>

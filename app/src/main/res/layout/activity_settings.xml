@@ -8,12 +8,13 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="20dp"
-        android:paddingLeft="40dp"
+        android:paddingBottom="12dp"
+        android:paddingLeft="@dimen/safe_h"
+        android:paddingTop="@dimen/safe_v"
         android:text="Settings"
         android:textColor="@color/text"
-        android:textSize="24sp"
-        android:textStyle="bold" />
+        android:textSize="@dimen/type_headline"
+        android:fontFamily="@string/font_strong" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -27,7 +28,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingLeft="40dp"
-            android:paddingRight="40dp" />
+            android:paddingLeft="@dimen/safe_h"
+            android:paddingRight="@dimen/safe_h" />
     </ScrollView>
 </LinearLayout>

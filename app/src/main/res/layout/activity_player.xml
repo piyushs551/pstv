@@ -24,15 +24,15 @@
         android:layout_gravity="bottom"
         android:background="@drawable/scrim_label"
         android:orientation="vertical"
-        android:paddingBottom="18dp"
-        android:paddingLeft="48dp"
-        android:paddingRight="48dp"
+        android:paddingBottom="@dimen/safe_v"
+        android:paddingLeft="@dimen/safe_h"
+        android:paddingRight="@dimen/safe_h"
         android:paddingTop="56dp"
         android:visibility="gone">
 
         <LinearLayout android:id="@+id/p_chips" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" />
-        <TextView android:id="@+id/p_sub" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:maxLines="1" android:textColor="@color/text" android:textSize="13sp" />
-        <TextView android:id="@+id/p_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:textColor="@color/text" android:textSize="22sp" android:textStyle="bold" />
+        <TextView android:id="@+id/p_sub" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:maxLines="1" android:textColor="@color/text" android:textSize="@dimen/type_caption" />
+        <TextView android:id="@+id/p_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:textColor="@color/text" android:textSize="@dimen/type_headline" android:fontFamily="@string/font_strong" />
 
         <FrameLayout
             android:id="@+id/p_bar_wrap"
@@ -50,17 +50,17 @@
                 android:layout_height="6dp"
                 android:layout_gravity="center_vertical"
                 android:max="1000"
-                android:progressTint="@color/accent" />
+                android:progressTint="@color/text" />
         </FrameLayout>
 
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:gravity="center_vertical" android:orientation="horizontal">
-            <TextView android:id="@+id/p_time" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/text" android:textSize="13sp" />
-            <TextView android:id="@+id/p_play" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:paddingBottom="5dp" android:paddingTop="5dp" android:text="Pause" android:textSize="13sp" />
-            <TextView android:id="@+id/p_audio" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:paddingBottom="5dp" android:paddingTop="5dp" android:text="Audio" android:textSize="13sp" />
-            <TextView android:id="@+id/p_subs" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:paddingBottom="5dp" android:paddingTop="5dp" android:text="Subtitles" android:textSize="13sp" />
-            <TextView android:id="@+id/p_aspect" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:paddingBottom="5dp" android:paddingTop="5dp" android:text="Aspect" android:textSize="13sp" />
+            <TextView android:id="@+id/p_time" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/text" android:textSize="@dimen/type_caption" />
+            <TextView android:id="@+id/p_play" style="@style/BtnPrimary" android:drawableLeft="@drawable/ic_pause" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:paddingBottom="5dp" android:paddingTop="5dp" android:text="Pause" android:textSize="@dimen/type_caption" />
+            <TextView android:id="@+id/p_audio" style="@style/Btn" android:drawableLeft="@drawable/ic_audio" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:paddingBottom="5dp" android:paddingTop="5dp" android:text="Audio" android:textSize="@dimen/type_caption" />
+            <TextView android:id="@+id/p_subs" style="@style/Btn" android:drawableLeft="@drawable/ic_cc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:paddingBottom="5dp" android:paddingTop="5dp" android:text="Subtitles" android:textSize="@dimen/type_caption" />
+            <TextView android:id="@+id/p_aspect" style="@style/Btn" android:drawableLeft="@drawable/ic_aspect" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:paddingBottom="5dp" android:paddingTop="5dp" android:text="Aspect" android:textSize="@dimen/type_caption" />
         </LinearLayout>
-        <TextView android:id="@+id/p_hint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textColor="@color/text_dim" android:textSize="11sp" />
+        <TextView android:id="@+id/p_hint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textColor="@color/text_dim" android:textSize="@dimen/type_micro" />
     </LinearLayout>
 
     <TextView
@@ -68,18 +68,25 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|left"
-        android:layout_margin="32dp"
-        android:background="#B0000000"
-        android:padding="12dp"
+        android:layout_marginLeft="@dimen/safe_h"
+        android:layout_marginTop="@dimen/safe_v"
+        android:background="@drawable/frost_panel"
+        android:paddingBottom="8dp"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingTop="8dp"
         android:textColor="@color/text"
-        android:textSize="20sp"
+        android:textSize="@dimen/type_headline"
         android:visibility="gone" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chan_list"
         android:layout_width="280dp"
         android:layout_height="match_parent"
-        android:background="#E60B0B10"
+        android:layout_marginBottom="@dimen/safe_v"
+        android:layout_marginLeft="@dimen/safe_h"
+        android:layout_marginTop="@dimen/safe_v"
+        android:background="@drawable/frost_panel"
         android:padding="8dp"
         android:visibility="gone" />
 
@@ -88,11 +95,14 @@
         android:layout_width="340dp"
         android:layout_height="match_parent"
         android:layout_gravity="right"
-        android:background="#E60B0B10"
+        android:layout_marginBottom="@dimen/safe_v"
+        android:layout_marginRight="@dimen/safe_h"
+        android:layout_marginTop="@dimen/safe_v"
+        android:background="@drawable/frost_panel"
         android:orientation="vertical"
         android:padding="12dp"
         android:visibility="gone">
-        <TextView android:id="@+id/side_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:padding="10dp" android:textColor="@color/text" android:textSize="17sp" android:textStyle="bold" />
+        <TextView android:id="@+id/side_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:padding="10dp" android:textColor="@color/text" android:textSize="@dimen/type_title" android:fontFamily="@string/font_strong" />
         <androidx.recyclerview.widget.RecyclerView android:id="@+id/side_list" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
     </LinearLayout>
 </FrameLayout>

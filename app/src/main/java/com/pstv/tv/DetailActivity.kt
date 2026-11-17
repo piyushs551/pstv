@@ -66,7 +66,7 @@ class DetailActivity : BaseActivity() {
                         setBackgroundResource(R.drawable.row_bg)
                         isFocusable = true
                         setTextColor(resources.getColor(R.color.text, null))
-                        textSize = 15f
+                        type(R.dimen.type_body)
                         gravity = Gravity.CENTER_VERTICAL
                         maxLines = 1
                     }

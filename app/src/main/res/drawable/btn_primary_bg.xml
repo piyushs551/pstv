@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Primary action: the accent colour; gains a bright ring when focused -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="rectangle"><solid android:color="@color/accent" /><stroke android:width="3dp" android:color="@color/focus_ring" /><corners android:radius="@dimen/radius_pill" /></shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle"><solid android:color="@color/accent" /><corners android:radius="@dimen/radius_pill" /></shape>
+    </item>
+</selector>
