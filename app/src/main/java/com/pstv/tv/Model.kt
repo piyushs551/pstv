@@ -21,7 +21,8 @@ data class Item(
 ) {
     val progress: Float get() = if (durMs > 0) (posMs.toFloat() / durMs).coerceIn(0f, 1f) else 0f
     /** Best image for a poster-style card. */
-    val cardArt: String? get() = backdrop?.replace("/w1280/", "/w300/") ?: poster ?: logo
+    val cardArt: String? get() = if (kind == Kind.LIVE) logo else (poster ?: logo)
+    val isWide: Boolean get() = kind == Kind.LIVE
     /** Best image for the hero banner. */
     val heroArt: String? get() = backdrop ?: poster ?: logo
     val isXtreamSeries: Boolean get() = url.startsWith("xs:")

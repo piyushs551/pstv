@@ -250,7 +250,7 @@ class Hero(private val act: HomeActivity) {
         private set
 
     val w = act.resources.displayMetrics.widthPixels
-    val h = dp(act, 326)
+    val h = dp(act, 280)
 
     init {
         act.findViewById<View>(R.id.hero_play).setOnClickListener { act.openCurrent(false) }

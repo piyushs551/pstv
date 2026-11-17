@@ -14,7 +14,7 @@
         <FrameLayout
             android:id="@+id/hero_area"
             android:layout_width="match_parent"
-            android:layout_height="326dp">
+            android:layout_height="280dp">
 
             <ImageView android:id="@+id/hero_a" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" />
             <ImageView android:id="@+id/hero_b" android:layout_width="match_parent" android:layout_height="match_parent" android:alpha="0" android:scaleType="centerCrop" />

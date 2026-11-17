@@ -23,6 +23,7 @@ class RowDesc(val key: String, val title: String, val ranked: Boolean = false, v
     var done = false
     var started = false
     var lastPos = 0
+    var focusedPos = -1
 }
 
 interface CardHost {
@@ -52,8 +53,9 @@ object Anim {
 
 object Card {
     const val PAGE = 100
-    const val W = 190
-    const val H = 107
+
+    fun w(c: Context, item: Item) = Tokens.pxi(c, if (item.isWide) R.dimen.wide_w else R.dimen.poster_w)
+    fun h(c: Context, item: Item) = Tokens.pxi(c, if (item.isWide) R.dimen.wide_h else R.dimen.poster_h)
 
     fun sub(item: Item): String = when {
         item.progress > 0f -> "${(item.progress * 100).toInt()}% watched"
@@ -68,6 +70,7 @@ class CardAdapter(private val row: RowDesc, private val host: CardHost) : Recycl
         val frame: View = v.findViewById(R.id.card_frame)
         val img: ImageView = v.findViewById(R.id.card_img)
         val rank: TextView = v.findViewById(R.id.card_rank)
+        val caption: View = v.findViewById(R.id.card_caption)
         val label: TextView = v.findViewById(R.id.card_label)
         val sub: TextView = v.findViewById(R.id.card_sub)
         val bar: View = v.findViewById(R.id.card_bar)
@@ -78,19 +81,25 @@ class CardAdapter(private val row: RowDesc, private val host: CardHost) : Recycl
     override fun onCreateViewHolder(p: ViewGroup, t: Int): VH =
         VH(LayoutInflater.from(p.context).inflate(R.layout.item_card, p, false))
 
+    private fun fade(v: View, to: Float) {
+        if (Anim.dur == 0L) v.alpha = to else v.animate().alpha(to).setDuration(Anim.dur).setInterpolator(Anim.interp).start()
+    }
+
     override fun onBindViewHolder(h: VH, pos: Int) {
         val item = row.items[pos]
         val c: Context = h.itemView.context
-        val w = dp(c, Card.W); val ht = dp(c, Card.H)
+        val w = Card.w(c, item); val ht = Card.h(c, item)
         h.frame.layoutParams = LinearLayout.LayoutParams(w, ht)
-        h.itemView.layoutParams = RecyclerView.LayoutParams(w, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginEnd = dp(c, 8); bottomMargin = dp(c, 2) }
-        val logoOnly = item.kind == Kind.LIVE && item.backdrop == null && item.poster == null && item.logo != null
+        h.itemView.layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginEnd = Tokens.pxi(c, R.dimen.card_gap) }
+        val logoOnly = item.kind == Kind.LIVE && item.logo != null
         h.img.scaleType = if (logoOnly) ImageView.ScaleType.FIT_CENTER else ImageView.ScaleType.CENTER_CROP
-        val pad = if (logoOnly) dp(c, 22) else 0
+        val pad = if (logoOnly) dp(c, 24) else 0
         h.img.setPadding(pad, pad / 2, pad, pad / 2)
         Images.card(h.img, item.cardArt, cleanTitle(item.name), w, ht)
         h.label.text = cleanTitle(item.name)
         h.sub.text = Card.sub(item)
+        h.caption.animate().cancel(); h.caption.alpha = 0f
+        h.itemView.animate().cancel(); h.itemView.alpha = if (row.focusedPos >= 0 && pos != row.focusedPos) Anim.dimAlpha else 1f
         h.rank.visibility = if (row.ranked) View.VISIBLE else View.GONE
         if (row.ranked) h.rank.text = "#${pos + 1}"
         h.bar.visibility = if (item.progress > 0f) View.VISIBLE else View.GONE
@@ -100,8 +109,18 @@ class CardAdapter(private val row: RowDesc, private val host: CardHost) : Recycl
             val s = if (focused) Anim.scale else 1f
             if (Anim.dur == 0L) { v.scaleX = s; v.scaleY = s } else v.animate().scaleX(s).scaleY(s).setDuration(Anim.dur).setInterpolator(Anim.interp).start()
             v.translationZ = if (focused) 10f else 0f
+            h.frame.translationZ = if (focused) 12f else 0f          // soft shadow under the focused card
+            fade(h.caption, if (focused) 1f else 0f)
+            val rv = v.parent as? RecyclerView
             val p = h.bindingAdapterPosition
-            if (focused && p >= 0 && p < row.items.size) host.onCardFocused(row, p, row.items[p])
+            if (focused && p >= 0 && p < row.items.size) {
+                row.focusedPos = p
+                rv?.let { list -> for (i in 0 until list.childCount) { val ch = list.getChildAt(i); fade(ch, if (ch === v) 1f else Anim.dimAlpha) } }
+                host.onCardFocused(row, p, row.items[p])
+            } else if (!focused) {
+                row.focusedPos = -1
+                rv?.post { if (row.focusedPos == -1) for (i in 0 until rv.childCount) fade(rv.getChildAt(i), 1f) }
+            }
         }
         h.itemView.setOnKeyListener { _, code, e ->
             val p = h.bindingAdapterPosition
@@ -119,8 +138,9 @@ class CardAdapter(private val row: RowDesc, private val host: CardHost) : Recycl
     }
 
     override fun onViewRecycled(h: VH) {
-        h.itemView.animate().cancel()
-        h.itemView.scaleX = 1f; h.itemView.scaleY = 1f; h.itemView.translationZ = 0f
+        h.itemView.animate().cancel(); h.caption.animate().cancel()
+        h.itemView.scaleX = 1f; h.itemView.scaleY = 1f; h.itemView.translationZ = 0f; h.itemView.alpha = 1f
+        h.frame.translationZ = 0f; h.caption.alpha = 0f
     }
 
     fun loadMore() {
