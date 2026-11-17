@@ -13,7 +13,9 @@ import kotlinx.coroutines.cancel
 class App : Application() {
     override fun onCreate() {
         super.onCreate()
+        Fonts.install(this)
         Prefs.init(this)
+        Anim.init(this)
         Db.init(this)
         Images.init(this)
         Repo.refreshIfStale()

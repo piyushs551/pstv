@@ -2,14 +2,6 @@
 <resources>
     <string name="app_name">PSTV</string>
 
-    <color name="bg">#0B0B10</color>
-    <color name="surface">#16161F</color>
-    <color name="surface2">#22222E</color>
-    <color name="accent">#7C5CFF</color>
-    <color name="text">#F2F2F7</color>
-    <color name="text_dim">#9A9AB0</color>
-    <color name="focus">#FFFFFF</color>
-
     <style name="Theme.Pstv" parent="@android:style/Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/bg</item>
         <item name="android:colorBackground">@color/bg</item>

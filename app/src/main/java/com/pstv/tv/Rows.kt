@@ -34,10 +34,19 @@ interface CardHost {
     fun onRowEmpty(row: RowDesc) {}
 }
 
-/** Animation settings (Settings > Animations). Property animations only: no extra bitmaps, no blur. */
+/** Animation: token values (tokens.xml) scaled by the Settings > Animations choice. Property animations only. */
 object Anim {
-    val scale get() = when (Prefs.anim) { 0 -> 1f; 1 -> 1.05f; else -> 1.08f }
-    val dur get() = when (Prefs.anim) { 0 -> 0L; 1 -> 90L; else -> 140L }
+    private var tokenScale = 1.09f
+    private var tokenMs = 150L
+    var dimAlpha = 0.55f
+        private set
+    fun init(c: Context) {
+        tokenScale = Tokens.float(c, R.dimen.focus_scale)
+        tokenMs = Tokens.int(c, R.integer.focus_ms).toLong()
+        dimAlpha = Tokens.int(c, R.integer.dim_alpha_pct) / 100f
+    }
+    val scale get() = when (Prefs.anim) { 0 -> 1f; 1 -> 1f + (tokenScale - 1f) * 0.6f; else -> tokenScale }
+    val dur get() = when (Prefs.anim) { 0 -> 0L; 1 -> tokenMs * 3 / 5; else -> tokenMs }
     val interp = DecelerateInterpolator()
 }
 

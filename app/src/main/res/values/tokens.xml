@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  PSTV DESIGN TOKENS — the one place to change the look.
+  Colours, radii, spacing, card sizes, focus behaviour and the type scale all live here.
+  (Font files: assets/fonts, wired in Fonts.kt. Icons: drawable/ic_*.xml, Material Symbols Rounded.)
+-->
+<resources>
+    <!-- Colour: near-black base, ONE accent (focus glow + primary actions only) -->
+    <color name="bg">#0A0A0D</color>
+    <color name="surface">#14141A</color>
+    <color name="surface2">#1D1D26</color>
+    <color name="text">#F5F5FA</color>
+    <color name="text_dim">#A3A3B5</color>
+    <color name="accent">#7C5CFF</color>
+    <color name="on_accent">#FFFFFF</color>
+    <color name="focus_ring">#FFFFFF</color>
+    <color name="on_focus">#0A0A0D</color>
+    <!-- Fake frosted glass: translucent dark fill + hairline edge (no blur) -->
+    <color name="frost">#D112121A</color>
+    <color name="frost_strong">#EB0C0C12</color>
+    <color name="frost_edge">#1FFFFFFF</color>
+    <color name="pill_idle">#26FFFFFF</color>
+    <color name="pill_selected">#40FFFFFF</color>
+    <color name="scrim">#0A0A0D</color>
+
+    <!-- Radii -->
+    <dimen name="radius_card">14dp</dimen>
+    <dimen name="radius_panel">16dp</dimen>
+    <dimen name="radius_pill">28dp</dimen>
+
+    <!-- Spacing (4-pt grid) and TV-safe margins (5% overscan on a 960x540 dp screen) -->
+    <dimen name="space_xs">4dp</dimen>
+    <dimen name="space_sm">8dp</dimen>
+    <dimen name="space_md">16dp</dimen>
+    <dimen name="space_lg">24dp</dimen>
+    <dimen name="space_xl">32dp</dimen>
+    <dimen name="safe_h">48dp</dimen>
+    <dimen name="safe_v">27dp</dimen>
+
+    <!-- Cards: 2:3 posters for movies/series, 16:9 for live/episodes -->
+    <dimen name="poster_w">112dp</dimen>
+    <dimen name="poster_h">168dp</dimen>
+    <dimen name="wide_w">200dp</dimen>
+    <dimen name="wide_h">112dp</dimen>
+    <dimen name="card_gap">12dp</dimen>
+    <dimen name="caption_h">40dp</dimen>
+
+    <!-- Focus: ~9% scale, ~150 ms, neighbours dimmed -->
+    <item name="focus_scale" format="float" type="dimen">1.09</item>
+    <integer name="focus_ms">150</integer>
+    <integer name="dim_alpha_pct">55</integer>
+
+    <!-- Type scale (Outfit). Roles map to font families in Fonts.kt -->
+    <string name="font_regular">sans-serif</string>
+    <string name="font_medium">sans-serif-medium</string>
+    <string name="font_strong">sans-serif-black</string>
+    <dimen name="type_display">28sp</dimen>
+    <dimen name="type_headline">22sp</dimen>
+    <dimen name="type_title">17sp</dimen>
+    <dimen name="type_body">14sp</dimen>
+    <dimen name="type_caption">12sp</dimen>
+    <dimen name="type_micro">11sp</dimen>
+</resources>

@@ -7,7 +7,7 @@
 - Windows scripts + README. Robolectric layout previews.
 
 ## Next (design-language pass, in stages; commit after each)
-1. Tokens + typography + icons (res/values/tokens.xml, Tokens.kt, bundled Outfit, Material Symbols Rounded vectors).
+1. DONE — Tokens + typography + icons (res/values/tokens.xml, Tokens.kt/Fonts.kt, Outfit in assets/fonts, 16 Material Symbols Rounded vectors ic_*.xml).
 2. Cards: 2:3 posters (movies/series) vs 16:9 (live/episodes), radius, focus ring+shadow, dim neighbours, title on focused card only.
 3. Hero / tabs / buttons: pills, TV-safe margins, accent only for focus + primary actions.
 4. Frosted translucent panels (player overlay/side panel, dialogs), Live/EPG/Settings/Detail restyle, previews.
