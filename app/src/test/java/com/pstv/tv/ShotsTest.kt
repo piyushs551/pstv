@@ -66,5 +66,29 @@ class ShotsTest {
         shot(Robolectric.buildActivity(SettingsActivity::class.java).setup().get(), "3_settings")
         val d = Robolectric.buildActivity(DetailActivity::class.java, Intent(androidx.test.core.app.ApplicationProvider.getApplicationContext<App>(), DetailActivity::class.java).putExtra("url", "http://x/movie/Action3.mp4")).setup().get()
         shot(d, "4_detail")
+        val act = Robolectric.buildActivity(SearchActivity::class.java).setup().get()
+        val pl = android.view.LayoutInflater.from(act).inflate(R.layout.activity_player, null) as android.widget.FrameLayout
+        pl.findViewById<View>(R.id.overlay).visibility = View.VISIBLE
+        pl.findViewById<android.widget.TextView>(R.id.p_title).text = "Sample Series 4"
+        pl.findViewById<android.widget.TextView>(R.id.p_sub).text = "Season 1 Episode 8"
+        pl.findViewById<android.widget.TextView>(R.id.p_time).text = "00:04 / 27:36"
+        pl.findViewById<android.widget.ProgressBar>(R.id.p_bar).progress = 120
+        val chips = pl.findViewById<android.widget.LinearLayout>(R.id.p_chips)
+        for (t in listOf("FULL HD", "HEVC", "23.98 Hz", "STEREO")) chips.addView(android.widget.TextView(act).apply { text = t; setBackgroundResource(R.drawable.chip_bg); setTextColor(-1); setPadding(20, 6, 20, 6); type(R.dimen.type_micro) })
+        pl.findViewById<View>(R.id.side).visibility = View.VISIBLE
+        pl.findViewById<android.widget.TextView>(R.id.side_title).text = "Subtitles"
+        val sl = pl.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.side_list)
+        sl.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(act)
+        sl.adapter = object : androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>() {
+            val rows = listOf("✓   Off", "     Track 1 [English]", "     Find subtitles online…", "     Size:  100%")
+            override fun getItemCount() = rows.size
+            override fun onCreateViewHolder(p: android.view.ViewGroup, t: Int) = object : androidx.recyclerview.widget.RecyclerView.ViewHolder(android.widget.TextView(p.context).apply { setBackgroundResource(R.drawable.row_bg); setTextColor(-1); setPadding(30, 24, 30, 24); layoutParams = androidx.recyclerview.widget.RecyclerView.LayoutParams(-1, -2) }) {}
+            override fun onBindViewHolder(h: androidx.recyclerview.widget.RecyclerView.ViewHolder, i: Int) { (h.itemView as android.widget.TextView).text = rows[i] }
+        }
+        pl.setBackgroundColor(0xFF2A3A4A.toInt())
+        pl.measure(View.MeasureSpec.makeMeasureSpec(1920, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.EXACTLY)); pl.layout(0, 0, 1920, 1080)
+        settle()
+        val pb = Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888); pl.draw(Canvas(pb))
+        File(out, "8_player.png").outputStream().use { Bitmap.createScaledBitmap(pb, 960, 540, true).compress(Bitmap.CompressFormat.PNG, 80, it) }
     }
 }

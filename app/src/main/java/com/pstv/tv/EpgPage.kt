@@ -28,7 +28,7 @@ class EpgPage(private val act: HomeActivity, root: View) {
 
     private val minuteDp = 4
     private val windowMin = 180
-    private val labelDp = 150
+    private val labelDp = 130
     private val fmt = SimpleDateFormat("h:mm a", Locale.getDefault())
 
     private var channels: List<Item> = emptyList()
@@ -79,7 +79,7 @@ class EpgPage(private val act: HomeActivity, root: View) {
         for (m in 0 until windowMin step 30) {
             head.addView(TextView(act).apply {
                 text = fmt.format(Date(winStart + m * 60_000L)); type(R.dimen.type_caption); setTextColor(act.getColor(R.color.text_dim))
-                layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { leftMargin = dp(act, labelDp + 24 + m * minuteDp) }
+                layoutParams = FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { leftMargin = dp(act, labelDp + 48 + m * minuteDp) }
             })
         }
     }
@@ -110,7 +110,7 @@ class EpgPage(private val act: HomeActivity, root: View) {
             val row = LinearLayout(c).apply {
                 orientation = LinearLayout.HORIZONTAL
                 layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(c, 58))
-                setPadding(dp(c, 24), 0, 0, 0)
+                setPadding(Tokens.pxi(c, R.dimen.safe_h), 0, 0, 0)
                 gravity = Gravity.CENTER_VERTICAL
             }
             val label = LinearLayout(c).apply {

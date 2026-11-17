@@ -6,7 +6,7 @@ Status: done / partial / todo.
 |---|---|---|
 | Nav | Top tabs Search, Home, Live, EPG, Movies, TV shows; profile + settings icons; pill on selected | done (no profile) |
 | Home | Hero with title, chips (source/rating/genres), plot; rows: Continue watching, trending (ranked #1..), favorites, recent live, recently added | done |
-| Cards | Caption under card (title + sub line), white focus outline | done (being redone per design spec) |
+| Cards | Caption under card (title + sub line), white focus outline | done (posters 2:3 / wide 16:9, title on focus) |
 | Live | Category sidebar (Home, Recently watched, Latest added, groups) with check; channel tiles right | done |
 | EPG | Time grid, channel logos, "No schedule" blocks | done (3 h window) |
 | Settings | Playlists + EPG sources with last refresh, Add, Refresh all | partial (single playlist) |

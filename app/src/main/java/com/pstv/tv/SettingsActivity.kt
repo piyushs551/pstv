@@ -30,7 +30,7 @@ class SettingsActivity : BaseActivity() {
 
     private fun section(t: String) {
         list.addView(TextView(this).apply {
-            text = t; setTextColor(getColor(R.color.accent)); type(R.dimen.type_caption); setPadding(dp(this@SettingsActivity, 4), dp(this@SettingsActivity, 14), 0, dp(this@SettingsActivity, 4))
+            text = t.uppercase(); letterSpacing = 0.08f; typeface = Fonts.medium(); setTextColor(getColor(R.color.text_dim)); type(R.dimen.type_caption); setPadding(dp(this@SettingsActivity, 4), dp(this@SettingsActivity, 14), 0, dp(this@SettingsActivity, 4))
         })
     }
 
@@ -42,7 +42,7 @@ class SettingsActivity : BaseActivity() {
             setPadding(dp(context, 14), dp(context, 8), dp(context, 14), dp(context, 8))
             layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(context, 5) }
         }
-        val t = TextView(this).apply { text = title; setTextColor(getColor(R.color.text)); type(R.dimen.type_body) }
+        val t = TextView(this).apply { text = title; typeface = Fonts.medium(); setTextColor(getColor(R.color.text)); type(R.dimen.type_body) }
         val s = TextView(this).apply { setTextColor(getColor(R.color.text_dim)); type(R.dimen.type_caption); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }
         v.addView(t); v.addView(s)
         val update = { s.text = value() }

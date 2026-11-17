@@ -402,6 +402,7 @@ class PlayerActivity : BaseActivity() {
             sideList.post { (sideList.layoutManager as LinearLayoutManager).findViewByPosition(focusAt)?.requestFocus() }
         }
         side.visibility = View.VISIBLE
+        overlay.visibility = View.GONE          // the panel replaces the controls while it is open
         ui.removeCallbacks(hideOverlay)
         render()
     }
