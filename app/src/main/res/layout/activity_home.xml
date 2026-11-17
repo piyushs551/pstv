@@ -157,4 +157,16 @@
             android:textColor="@color/text"
             android:textSize="@dimen/type_micro" />
     </LinearLayout>
+
+    <!-- Category drawer (Left on the first card of Movies / TV shows) -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/drawer"
+        android:layout_width="260dp"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="@dimen/safe_v"
+        android:layout_marginLeft="@dimen/content_start"
+        android:layout_marginTop="64dp"
+        android:background="@drawable/frost_panel"
+        android:padding="8dp"
+        android:visibility="gone" />
 </FrameLayout>

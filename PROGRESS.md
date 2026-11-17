@@ -15,8 +15,8 @@ Stage A (bugs) — DONE (built, not yet verified on TV):
  A5 Live player: Left opens channel list.
  A6 Tiles without art show full name + kind icon, not initials.
 Stage B (density + Prime layout) — DONE (built + previewed; Settings > UI size 85% default, landscape cards for all, slim text tabs, left rail Search/Favorites/Settings, Favorites screen = SearchActivity extra "fav"): UI looks too zoomed (~800x600): add Settings > UI size (Compact default via density scale); landscape 16:9 cards for ALL kinds (TMDB backdrops; supersedes 2:3 posters) so ~2 rows show; slimmer text top menu; left icon rail (Search, Favorites); less chunky.
-Stage C (content): Left key in Movies/TV tabs opens a category list (recently added, top, groups) to jump; more TMDB rows (top rated/popular/top-10 style); Settings: reorder/hide categories per tab (e.g. Indian first).
-Stage D: Series detail like Prime: info on top, season selector (dropdown/pills), episodes as landscape cards with episode info.
+Stage C (content) — PARTLY DONE: category drawer (Left on first card in Movies/TV shows) done; still TODO: more TMDB rows (top rated/popular), Settings screen to reorder/hide categories per tab: Left key in Movies/TV tabs opens a category list (recently added, top, groups) to jump; more TMDB rows (top rated/popular/top-10 style); Settings: reorder/hide categories per tab (e.g. Indian first).
+Stage D — DONE (built, untested on TV; needs Xtream series): Series detail like Prime: info on top, season selector (dropdown/pills), episodes as landscape cards with episode info.
 Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending from user.
 
 ## Earlier plan (design-language pass, in stages; commit after each)

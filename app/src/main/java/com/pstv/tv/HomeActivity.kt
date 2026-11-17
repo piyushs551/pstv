@@ -41,6 +41,8 @@ class HomeActivity : BaseActivity(), CardHost {
     private var buildToken = 0
     private var chromeShown = true
     private var appliedScale = 0
+    private var curRow = 0
+    private lateinit var drawer: RecyclerView
 
     private val repoListener: () -> Unit = {
         status.text = listOf(Repo.status, Epg.status).firstOrNull { it.isNotEmpty() } ?: ""
@@ -51,6 +53,7 @@ class HomeActivity : BaseActivity(), CardHost {
         super.onCreate(b)
         setContentView(R.layout.activity_home)
         appliedScale = Prefs.uiScale
+        drawer = findViewById(R.id.drawer); drawer.layoutManager = LinearLayoutManager(this)
         tabs = findViewById(R.id.tabs); status = findViewById(R.id.status)
         rowsPage = findViewById(R.id.page_rows); livePageView = findViewById(R.id.page_live); epgPageView = findViewById(R.id.page_epg)
         rowsRv = findViewById(R.id.rows)
@@ -93,6 +96,35 @@ class HomeActivity : BaseActivity(), CardHost {
 
     override fun onDestroy() { Repo.listeners.remove(repoListener); handler.removeCallbacksAndMessages(null); super.onDestroy() }
 
+    private fun openDrawer() {
+        if (rows.isEmpty()) return
+        val titles = rows.map { it.title }
+        drawer.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+            override fun getItemCount() = titles.size
+            override fun onCreateViewHolder(p: ViewGroup, t: Int): RecyclerView.ViewHolder {
+                val tv = TextView(p.context).apply {
+                    layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(context, 3) }
+                    setPadding(dp(context, 14), dp(context, 9), dp(context, 14), dp(context, 9))
+                    setBackgroundResource(R.drawable.cat_bg); isFocusable = true; maxLines = 1
+                    ellipsize = android.text.TextUtils.TruncateAt.END; type(R.dimen.type_body)
+                    setTextColor(resources.getColorStateList(R.drawable.tab_text, null))
+                }
+                return object : RecyclerView.ViewHolder(tv) {}
+            }
+            override fun onBindViewHolder(h: RecyclerView.ViewHolder, i: Int) {
+                val tv = h.itemView as TextView
+                tv.text = titles[i]; tv.isActivated = i == curRow
+                tv.setOnClickListener { closeDrawer(false); focusRow(i) }
+                tv.setOnKeyListener { _, k, e -> if (k == KeyEvent.KEYCODE_DPAD_RIGHT && e.action == KeyEvent.ACTION_DOWN) { closeDrawer(true); true } else false }
+            }
+        }
+        drawer.visibility = View.VISIBLE
+        (drawer.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(curRow, dp(this, 80))
+        drawer.post { (drawer.layoutManager as LinearLayoutManager).findViewByPosition(curRow)?.requestFocus() }
+    }
+
+    private fun closeDrawer(refocus: Boolean) { drawer.visibility = View.GONE; if (refocus) focusRow(curRow) }
+
     private fun inTabs(v: View?): Boolean { var x: View? = v; while (x != null) { if (x === tabs) return true; x = x.parent as? View }; return false }
 
     /** Back: deep in a page -> top + tab bar focused; on a non-Home tab -> Home; on Home -> exit. */
@@ -100,6 +132,7 @@ class HomeActivity : BaseActivity(), CardHost {
     override fun onBackPressed() {
         val onTabs = inTabs(currentFocus)
         when {
+            drawer.visibility == View.VISIBLE -> closeDrawer(true)
             !onTabs && (tab == 1 || tab == 4 || tab == 5) -> {
                 (rowsRv.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(0, 0)
                 setChrome(true); focusTabs()
@@ -222,6 +255,7 @@ class HomeActivity : BaseActivity(), CardHost {
 
     override fun onCardFocused(row: RowDesc, pos: Int, item: Item) {
         row.lastPos = pos
+        curRow = rows.indexOf(row).coerceAtLeast(0)
         hero.show(item)
         // Warm the hero image for the next few candidates (size-matched so the cache key hits).
         for (j in pos - 1..pos + 4) if (j != pos && j in row.items.indices) Images.preload(row.items[j].heroArt, hero.w, hero.h)
@@ -239,7 +273,7 @@ class HomeActivity : BaseActivity(), CardHost {
             KeyEvent.KEYCODE_DPAD_UP -> {
                 if (idx <= 0) { if (Prefs.hero) findViewById<View>(R.id.hero_play).requestFocus() else focusTabs() } else focusRow(idx - 1); true
             }
-            KeyEvent.KEYCODE_DPAD_LEFT -> { if (pos == 0) findViewById<View>(R.id.rail_search).requestFocus(); pos == 0 }
+            KeyEvent.KEYCODE_DPAD_LEFT -> { if (pos == 0) { if (tab == 4 || tab == 5) openDrawer() else findViewById<View>(R.id.rail_search).requestFocus() }; pos == 0 }
             KeyEvent.KEYCODE_DPAD_RIGHT -> pos >= row.items.size - 1
             else -> false
         }
