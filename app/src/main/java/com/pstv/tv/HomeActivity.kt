@@ -3,6 +3,10 @@ package com.pstv.tv
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
@@ -42,6 +46,19 @@ class HomeActivity : BaseActivity(), CardHost {
     private var chromeShown = true
     private var appliedScale = 0
     private var appliedHero = 0
+    private val clockHandler = Handler(Looper.getMainLooper())
+    private val clockTick = object : Runnable {
+        override fun run() { updateClock(); clockHandler.postDelayed(this, 60_000 - System.currentTimeMillis() % 60_000 + 300) }
+    }
+
+    private fun updateClock() {
+        val tv = findViewById<TextView>(R.id.clock)
+        if (Prefs.clockMode == "off") { tv.visibility = View.GONE; return }
+        tv.visibility = View.VISIBLE
+        val f = SimpleDateFormat(if (Prefs.clock24) "EEE, MMM d   HH:mm z" else "EEE, MMM d   h:mm a z", Locale.getDefault())
+        f.timeZone = if (Prefs.clockMode == "device") TimeZone.getDefault() else TimeZone.getTimeZone("America/Toronto")
+        tv.text = f.format(Date())
+    }
     private var curRow = 0
     private var appliedKey = ""
     private lateinit var drawer: RecyclerView
@@ -92,11 +109,14 @@ class HomeActivity : BaseActivity(), CardHost {
 
     override fun onStart() {
         super.onStart()
+        clockHandler.removeCallbacks(clockTick); clockHandler.post(clockTick)
         if (appliedScale != Prefs.uiScale || appliedHero != Prefs.heroSize) { recreate(); return }
         if (appliedKey != Prefs.tmdbKey) { appliedKey = Prefs.tmdbKey; showTab(tab, false); return }   // TMDB key added/changed in Settings
         repoListener()
         if (tab == 1) refreshPersonalRows()
     }
+
+    override fun onStop() { clockHandler.removeCallbacks(clockTick); super.onStop() }
 
     override fun onDestroy() { Repo.listeners.remove(repoListener); handler.removeCallbacksAndMessages(null); super.onDestroy() }
 

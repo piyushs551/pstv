@@ -48,6 +48,8 @@ Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending 
 
 - Round 5: UI size default 75%; Settings > Appearance > Banner height (S/M/L, % of screen); category reorder = pick up with OK, Up/Down, drop (hold OK = options); smart default category order (priority words hindi, india, bollywood, other Indian languages first; groups with a year newest first; editable in Settings > Categories; CategoriesTest); items inside Movies/TV categories sorted newest-added first (seen.ts then playlist reverse), Settings sort choice + "Sort" entry in the Movies/TV left drawer.
 
+- Clock top right on Home/Live/EPG/Movies/TV shows (Settings > Appearance: Eastern EST/EDT default, device zone, off; 12/24 h).
+
 ## Engine decision (round 3)
 - User reported MPV crashes on the stick and live MP2 audio is silent on ExoPlayer. MPV removed; Media3 upgraded 1.4.1 -> 1.7.1 and NextLib FFmpeg decoders added (software fallback for unsupported audio). UNVERIFIED on device. If a stream is still silent, report the track label from Audio panel.
 

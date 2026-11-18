@@ -140,6 +140,10 @@ class SettingsActivity : BaseActivity() {
     }
 
     private fun pg_appearance() {
+        row("Clock", { when (Prefs.clockMode) { "off" -> "Off"; "device" -> "Device time zone"; else -> "Eastern time (EST / EDT)" } }) {
+            choose("Clock (top right)", listOf("Eastern time (EST / EDT)" to "est", "Device time zone" to "device", "Off" to "off"), Prefs.clockMode) { Prefs.clockMode = it }
+        }
+        row("Clock format", { if (Prefs.clock24) "24-hour" else "12-hour" }) { Prefs.clock24 = !Prefs.clock24 }
         row("Banner height", { listOf("Small", "Medium", "Large")[Prefs.heroSize] }) { choose("Banner height (share of the screen)", listOf("Small" to 0, "Medium" to 1, "Large" to 2), Prefs.heroSize) { Prefs.heroSize = it } }
         row("UI size", { "${Prefs.uiScale}%  (smaller = more on screen)" }) {
             choose("UI size", listOf("Compact · 75% (default)" to 75, "Compact · 85%" to 85, "Medium · 100%" to 100, "Large · 115%" to 115), Prefs.uiScale) { Prefs.uiScale = it; recreate() }

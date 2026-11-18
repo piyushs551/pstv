@@ -62,6 +62,9 @@ object Prefs {
     /** Smart default category order (priority words first, then newest year first). */
     var catSmart: Boolean get() = i("catsmart", 1) == 1; set(v) = put("catsmart", if (v) 1 else 0)
     var catPriority: String get() = s("catprio", "hindi,india,bollywood,punjabi,tamil,telugu,malayalam,gujarati,marathi,bengali,kannada"); set(v) = put("catprio", v.trim())
+    /** Top-right clock: "est" (Eastern, shows EST/EDT), "device" (the TV's own zone) or "off". */
+    var clockMode: String get() = s("clock", "est"); set(v) = put("clock", v)
+    var clock24: Boolean get() = i("clock24", 0) == 1; set(v) = put("clock24", if (v) 1 else 0)
     var anim: Int get() = i("anim", 2); set(v) = put("anim", v)
     var hero: Boolean get() = i("hero", 1) == 1; set(v) = put("hero", if (v) 1 else 0)
     var tabFocusSwitch: Boolean get() = i("tabfocus", 1) == 1; set(v) = put("tabfocus", if (v) 1 else 0)

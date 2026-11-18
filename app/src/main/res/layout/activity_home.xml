@@ -132,7 +132,7 @@
         android:gravity="top"
         android:orientation="horizontal"
         android:paddingLeft="@dimen/content_start"
-        android:paddingRight="@dimen/safe_h"
+        android:paddingRight="@dimen/clock_space"
         android:paddingTop="@dimen/safe_v">
 
         <TextView style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Search" android:visibility="gone" />
@@ -157,6 +157,21 @@
             android:textColor="@color/text"
             android:textSize="@dimen/type_micro" />
     </LinearLayout>
+
+    <!-- Date and time, top right -->
+    <TextView
+        android:id="@+id/clock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|right"
+        android:layout_marginRight="@dimen/safe_h"
+        android:layout_marginTop="@dimen/safe_v"
+        android:fontFamily="@string/font_medium"
+        android:paddingTop="7dp"
+        android:shadowColor="#000000"
+        android:shadowRadius="4"
+        android:textColor="@color/text"
+        android:textSize="@dimen/type_micro" />
 
     <!-- Category drawer (Left on the first card of Movies / TV shows) -->
     <androidx.recyclerview.widget.RecyclerView

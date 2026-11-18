@@ -37,6 +37,7 @@
     <dimen name="space_xl">32dp</dimen>
     <dimen name="safe_h">48dp</dimen>
     <dimen name="safe_v">27dp</dimen>
+    <dimen name="clock_space">190dp</dimen>   <!-- room kept free at the right of the tab bar for the clock -->
     <dimen name="content_start">72dp</dimen>   <!-- left edge of page content; the icon rail sits to its left -->
 
     <!-- Cards: 2:3 posters for movies/series, 16:9 for live/episodes -->
