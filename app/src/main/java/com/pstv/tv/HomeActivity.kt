@@ -151,8 +151,9 @@ class HomeActivity : BaseActivity(), CardHost {
         chromeShown = show
         tabs.animate().cancel()
         if (Anim.dur == 0L) tabs.alpha = if (show) 1f else 0f else tabs.animate().alpha(if (show) 1f else 0f).setDuration(Anim.dur).start()
-        findViewById<View>(R.id.hero_area).visibility = if (Prefs.hero && show) View.VISIBLE else View.GONE
-        rowsPage.setPadding(0, if (show) (if (Prefs.hero) 0 else dp(this, 84)) else Tokens.pxi(this, R.dimen.safe_v), 0, 0)
+        // The banner stays where it is on every row; only the tab bar fades. Rows always sit below the banner.
+        findViewById<View>(R.id.hero_area).visibility = if (Prefs.hero) View.VISIBLE else View.GONE
+        rowsPage.setPadding(0, if (Prefs.hero) 0 else dp(this, 84), 0, 0)
     }
 
     // ---- tabs -----------------------------------------------------------------------------------
@@ -301,6 +302,11 @@ class HomeActivity : BaseActivity(), CardHost {
 
     /** Safety net: if a fast key hold ever leaves nothing focused, put focus back where it was. */
     override fun dispatchKeyEvent(e: KeyEvent): Boolean {
+        // Options / Menu button on the remote: jump to the side icon tray with Search highlighted.
+        if (e.keyCode == KeyEvent.KEYCODE_MENU) {
+            if (e.action == KeyEvent.ACTION_UP) { if (drawer.visibility == View.VISIBLE) closeDrawer(false); setChrome(true); findViewById<View>(R.id.rail_search).requestFocus() }
+            return true
+        }
         val r = super.dispatchKeyEvent(e)
         if (e.action == KeyEvent.ACTION_UP && e.keyCode in dpad) rowsRv.postDelayed({
             if (currentFocus == null && drawer.visibility != View.VISIBLE) when (tab) { 1, 4, 5 -> focusRow(curRow); 2 -> live.focusFirst(); 3 -> epg.focusFirst() }

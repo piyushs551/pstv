@@ -20,10 +20,12 @@ class SettingsActivity : BaseActivity() {
         super.onCreate(b)
         setContentView(R.layout.activity_settings)
         list = findViewById(R.id.list)
-        build()
+        build(intent.getStringExtra("page"))
         Repo.listeners.add(repoListener)
         list.getChildAt(0)?.requestFocus()
     }
+
+    override fun onResume() { super.onResume(); refreshValues() }
 
     override fun onDestroy() { Repo.listeners.remove(repoListener); super.onDestroy() }
 
@@ -74,7 +76,29 @@ class SettingsActivity : BaseActivity() {
     private fun keyLabel(user: String, built: String) = if (user.isNotEmpty()) "••••••••  (set here)" else if (built.isNotEmpty()) "Built in" else "Not set"
     private fun orNotSet(s: String) = s.ifEmpty { "Not set" }
 
-    private fun build() {
+    private class Page(val key: String, val title: String, val summary: () -> String, val build: () -> Unit)
+
+    private val pageList: List<Page> by lazy { listOf(
+        Page("playlist", "Playlist", { if (!Prefs.hasSource) "Not set up yet" else (if (Prefs.sourceType == "xtream") "Xtream" else "M3U") + "  •  ${Db.count()} items" }, ::pg_playlist),
+        Page("guide", "Guide (EPG)", { if (Epg.url().isBlank()) "No guide source yet" else if (Prefs.epgLast == 0L) "Not refreshed yet" else "${Db.epgCount()} programmes" }, ::pg_guide),
+        Page("appearance", "Appearance", { "UI size ${Prefs.uiScale}%  •  animations ${listOf("off", "fast", "normal")[Prefs.anim]}" }, ::pg_appearance),
+        Page("categories", "Categories", { "Reorder or hide rows in Live, Movies, TV shows" }, ::pg_categories),
+        Page("artwork", "Artwork & TMDB", { if (Tmdb.enabled) "TMDB key set  •  cache ${Prefs.cacheMb} MB" else "No TMDB key  •  cache ${Prefs.cacheMb} MB" }, ::pg_artwork),
+        Page("player", "Player", { "Seek ${Prefs.ffStep}/${Prefs.rwStep} s  •  buffer ${Prefs.bufferMb} MB" }, ::pg_player),
+        Page("subtitles", "Subtitles", { "Size ${Prefs.subSize}%  •  language ${Prefs.subLang}" }, ::pg_subtitles),
+        Page("about", "About", { "Version ${packageManager.getPackageInfo(packageName, 0).versionName}" }, ::pg_about),
+    ) }
+
+    /** Top menu (no page) or one topic's rows. */
+    private fun build(page: String?) {
+        val p = pageList.firstOrNull { it.key == page }
+        findViewById<TextView>(R.id.settings_title).text = p?.title ?: "Settings"
+        if (p == null) pageList.forEach { pg ->
+            row(pg.title, pg.summary) { startActivity(android.content.Intent(this, SettingsActivity::class.java).putExtra("page", pg.key)) }
+        } else p.build()
+    }
+
+    private fun pg_playlist() {
         section("PLAYLIST  (your own provider; the app ships no content)")
         row("Source type", { if (Prefs.sourceType == "xtream") "Xtream login" else "M3U URL" }) {
             Prefs.sourceType = if (Prefs.sourceType == "xtream") "m3u" else "xtream"
@@ -99,7 +123,9 @@ class SettingsActivity : BaseActivity() {
         }
         row("User-Agent", { Prefs.ua }) { edit("User-Agent sent to your provider", Prefs.ua) { Prefs.ua = it } }
 
-        section("GUIDE (EPG)")
+    }
+
+    private fun pg_guide() {
         row("XMLTV URL", { Prefs.epgUrl.ifEmpty { "Automatic (Xtream login or the playlist's url-tvg)" } }) { edit("XMLTV URL (blank = automatic)", Prefs.epgUrl, hint = "http://…/xmltv.php") { Prefs.epgUrl = it } }
         row("Refresh guide now", {
             when {
@@ -111,7 +137,9 @@ class SettingsActivity : BaseActivity() {
         }) { if (Epg.url().isBlank()) toast("Set an XMLTV URL first") else Epg.refresh() }
         row("Guide shows", { if (Prefs.epgOnlyWithData) "Only channels with guide data" else "All live channels" }) { Prefs.epgOnlyWithData = !Prefs.epgOnlyWithData }
 
-        section("APPEARANCE")
+    }
+
+    private fun pg_appearance() {
         row("UI size", { "${Prefs.uiScale}%  (smaller = more on screen)" }) {
             choose("UI size", listOf("Compact · 75%" to 75, "Compact · 85% (default)" to 85, "Medium · 100%" to 100, "Large · 115%" to 115), Prefs.uiScale) { Prefs.uiScale = it; recreate() }
         }
@@ -123,12 +151,16 @@ class SettingsActivity : BaseActivity() {
         row("Switch tabs when focused", { if (Prefs.tabFocusSwitch) "On" else "Off (press OK to switch)" }) { Prefs.tabFocusSwitch = !Prefs.tabFocusSwitch }
         row("Home rows", { "Choose and reorder" }) { homeRowsDialog() }
 
-        section("CATEGORIES")
+    }
+
+    private fun pg_categories() {
         row("Live categories", { "Reorder or hide" }) { startActivity(android.content.Intent(this, CategoriesActivity::class.java).putExtra("kind", Kind.LIVE.ordinal)) }
         row("Movie categories", { "Reorder or hide (for example Indian first)" }) { startActivity(android.content.Intent(this, CategoriesActivity::class.java).putExtra("kind", Kind.MOVIE.ordinal)) }
         row("TV show categories", { "Reorder or hide" }) { startActivity(android.content.Intent(this, CategoriesActivity::class.java).putExtra("kind", Kind.SERIES.ordinal)) }
 
-        section("ARTWORK & PLOTS")
+    }
+
+    private fun pg_artwork() {
         row("TMDB API key", { keyLabel(Prefs.tmdbKeyUser, BuildConfig.TMDB_KEY) }) { edit("TMDB API key (v3). Leave empty to use the built-in key", Prefs.tmdbKeyUser, password = true) { Prefs.tmdbKeyUser = it; Prefs.trendingAt = 0 } }
         row("Test TMDB key", { "Checks that TMDB accepts the key" }) { toast("Checking…"); Repo.scope.launch { val m = Tmdb.test(); runOnUiThread { toast(m) } } }
         row("Image cache size", { "${Prefs.cacheMb} MB   (used ${Images.diskBytes() / 1_048_576} MB)" }) {
@@ -136,6 +168,9 @@ class SettingsActivity : BaseActivity() {
         }
         row("Clear image cache", { "Frees ${Images.diskBytes() / 1_048_576} MB" }) { Images.clear(); toast("Image cache cleared") }
 
+    }
+
+    private fun pg_player() {
         section("PLAYER · LIVE")
         row("Low latency", { if (Prefs.lowLatency) "On (smaller buffer, faster start, less tolerance for a weak connection)" else "Off" }) { Prefs.lowLatency = !Prefs.lowLatency }
 
@@ -145,7 +180,9 @@ class SettingsActivity : BaseActivity() {
 
         section("PLAYER · BOTH")
         row("Match framerate", { if (Prefs.matchFps) "On (asks the TV for a matching refresh rate if it offers one)" else "Off" }) { Prefs.matchFps = !Prefs.matchFps }
-        section("SUBTITLES")
+    }
+
+    private fun pg_subtitles() {
         row("OpenSubtitles API key", { keyLabel(Prefs.osKeyUser, BuildConfig.OS_KEY) }) { edit("OpenSubtitles API key. Leave empty to use the built-in key", Prefs.osKeyUser, password = true) { Prefs.osKeyUser = it } }
         row("OpenSubtitles username", { if (Prefs.osUserUser.isNotEmpty()) Prefs.osUserUser else if (BuildConfig.OS_USER.isNotEmpty()) "Built in" else "Not set" }) { edit("OpenSubtitles username. Leave empty to use the built-in one", Prefs.osUserUser) { Prefs.osUserUser = it } }
         row("OpenSubtitles password", { keyLabel(Prefs.osPassUser, BuildConfig.OS_PASS) }) { edit("OpenSubtitles password. Leave empty to use the built-in one", Prefs.osPassUser, password = true) { Prefs.osPassUser = it } }
@@ -156,7 +193,9 @@ class SettingsActivity : BaseActivity() {
             choose("Subtitle delay (applies to downloaded subtitles)", delays.map { delayLabel(it) to it }, Prefs.subDelayMs) { Prefs.subDelayMs = it }
         }
 
-        section("ABOUT")
+    }
+
+    private fun pg_about() {
         row("PSTV", { "Version ${packageManager.getPackageInfo(packageName, 0).versionName}" }) {}
     }
 

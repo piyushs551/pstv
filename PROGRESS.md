@@ -44,6 +44,8 @@ Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending 
 
 - Launcher icon: vector drawable replaced by PNG mipmaps (Fire TV launcher showed a broken icon); banner regenerated at 320x180 (drawable-xhdpi/banner.png).
 
+- Round 4: banner stays fixed on every row (only the tab bar fades); remote Options/Menu key focuses the side tray Search; Settings is a short top menu with sub-screens (Playlist, Guide, Appearance, Categories, Artwork & TMDB, Player, Subtitles, About).
+
 ## Engine decision (round 3)
 - User reported MPV crashes on the stick and live MP2 audio is silent on ExoPlayer. MPV removed; Media3 upgraded 1.4.1 -> 1.7.1 and NextLib FFmpeg decoders added (software fallback for unsupported audio). UNVERIFIED on device. If a stream is still silent, report the track label from Audio panel.
 
