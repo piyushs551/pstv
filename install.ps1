@@ -16,15 +16,26 @@ if ($Build -or -not (Test-Path "app\build\outputs\apk\debug\app-debug.apk")) { &
 
 $target = "${Ip}:${Port}"
 adb connect $target
-# Wait for the TV (no Enter needed). Only if it is waiting for your approval does it say so.
-$deadline = (Get-Date).AddSeconds(60); $warned = $false
+# Wait for the TV (no Enter needed). Reconnects by itself if the connection is stale/offline.
+$ErrorActionPreference = "Continue"      # adb writes status text to stderr; do not treat that as a failure
+$deadline = (Get-Date).AddSeconds(90); $warned = $false; $tries = 0
 while ($true) {
-    $state = (adb -s $target get-state 2>&1 | Out-String).Trim()
+    $state = ((& adb -s $target get-state 2>&1 | ForEach-Object { "$_" }) -join " ").Trim()
     if ($state -eq "device") { break }
-    if ((Get-Date) -gt $deadline) { throw "Could not reach the TV (state: $state). Check that ADB debugging is on and the IP is right." }
-    if (-not $warned -and $state -match "unauthorized") { Write-Host "The TV is asking 'Allow USB debugging?'. Choose Allow (tick Always allow once) with the remote." -ForegroundColor Yellow; $warned = $true }
-    Start-Sleep -Seconds 2
+    if ((Get-Date) -gt $deadline) { throw "Could not reach the TV (state: $state). Wake the TV, check ADB debugging is on and the IP is right, then run again." }
+    if ($state -match "unauthorized") {
+        if (-not $warned) { Write-Host "The TV is asking 'Allow USB debugging?'. Choose Allow (tick Always allow once) with the remote." -ForegroundColor Yellow; $warned = $true }
+    } else {
+        # offline / not found: drop the stale connection and connect again (restart adb on the 3rd try)
+        $tries++
+        if ($tries -ge 3 -and $tries % 3 -eq 0) { & adb kill-server 2>&1 | Out-Null; & adb start-server 2>&1 | Out-Null }
+        & adb disconnect $target 2>&1 | Out-Null
+        Start-Sleep -Milliseconds 600
+        & adb connect $target 2>&1 | Out-Null
+    }
+    Start-Sleep -Seconds 3
 }
+$ErrorActionPreference = "Stop"
 
 $abis = (adb -s $target shell getprop ro.product.cpu.abilist).Trim()
 $want = (Select-String -Path gradle.properties -Pattern '^pstv\.abi=(.+)$').Matches.Groups[1].Value
