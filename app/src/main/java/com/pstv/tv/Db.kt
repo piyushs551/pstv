@@ -131,11 +131,34 @@ object Db {
 
     fun byId(id: Long): Item? = query("SELECT $COLS FROM items WHERE id=?", id.toString()).firstOrNull()
 
-    /** Exact normalised-title match, used to keep only TMDB titles that the playlist contains. */
+    /** Playlist item for a TMDB title: exact normalised match first, then a looser match (see fuzzyAccept). */
     fun matchTitle(norm: String, kind: Kind, year: Int?): Item? {
         if (norm.isEmpty()) return null
         val list = query("SELECT $COLS FROM items WHERE norm=? AND kind=? ORDER BY sort LIMIT 8", norm, kind.ordinal.toString())
-        return list.firstOrNull { year == null || it.year == null || it.year == year } ?: list.firstOrNull()
+        list.firstOrNull { year == null || it.year == null || it.year == year }?.let { return it }
+        if (list.isNotEmpty()) return list.first()
+        return fuzzyMatch(norm, kind, year)
+    }
+
+    private fun fuzzyMatch(norm: String, kind: Kind, year: Int?): Item? {
+        val want = fuzzyTokens(norm)
+        if (want.isEmpty() || want.any { !it.all { c -> c.isLetterOrDigit() } }) return null
+        val queries = ArrayList<String>()
+        queries += want.sortedByDescending { it.length }.take(3).joinToString(" ") { "$it*" }
+        if (want.size >= 2) queries += want.take(2).joinToString("") + "*"        // "spider man" -> "spiderman*"
+        var best: Item? = null; var bestScore = 0.0
+        for (m in queries) {
+            rd.rawQuery("SELECT $I_COLS, i.norm FROM items i WHERE i.id IN (SELECT docid FROM items_fts WHERE items_fts MATCH ?) AND i.kind=? LIMIT 60", arrayOf(m, kind.ordinal.toString())).use { c ->
+                while (c.moveToNext()) {
+                    val cand = c.item(); val got = fuzzyTokens(c.getString(13) ?: "")
+                    if (!fuzzyAccept(want, got, year, cand.year)) continue
+                    val score = want.toSet().intersect(got.toSet()).size.toDouble() / want.toSet().union(got.toSet()).size
+                    if (score > bestScore) { bestScore = score; best = cand }
+                }
+            }
+            if (best != null) return best
+        }
+        return null
     }
 
     fun search(q: String, limit: Int = 120): List<Item> {

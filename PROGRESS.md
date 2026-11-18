@@ -55,6 +55,8 @@ Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending 
 - Round 7: series autoplay next episode (Settings > Player, default on; Player fetches Xtream episode list); finishing an episode queues "Next: S1 E2" in Continue Watching (recents.label marker); Home has separate "Continue watching movies" / "Continue watching series" rows (legacy "recent" key migrates). Tests: HomeRowsTest, CategoriesTest.
 - DONE (round 8): smart search = Smart.kt (local query parser: genre/language/region/year/keywords) + Tmdb.discoverTitles/keywordId/matchTitles (live, up to 8 pages per kind, 650 ms typing pause, 429 handled, session cache) + category-name matches; Settings > Artwork & TMDB > Smart search. SmartTest. UNVERIFIED against real TMDB. Earlier idea (user): smart search ("bollywood comedy", "christmas movies"): TMDB discover/keywords + group names + local title match; optional background TMDB index of the playlist.
 
+- Round 8b: TMDB-to-playlist matching is now fuzzy (Db.matchTitle -> fuzzyMatch via FTS; Model.fuzzyTokens/fuzzyAccept: ignores years, language/quality tags, leading "the", spacing/hyphens; sequels and different years rejected). FuzzyTest. Used by suggestion rows, themed search, recommendations.
+
 ## Engine decision (round 3)
 - User reported MPV crashes on the stick and live MP2 audio is silent on ExoPlayer. MPV removed; Media3 upgraded 1.4.1 -> 1.7.1 and NextLib FFmpeg decoders added (software fallback for unsupported audio). UNVERIFIED on device. If a stream is still silent, report the track label from Audio panel.
 

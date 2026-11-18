@@ -62,3 +62,32 @@ fun cleanTitle(raw: String): String {
     s = yearParen.replace(s, "")
     return s.replace(Regex("\\s+"), " ").trim().ifEmpty { raw }
 }
+
+// ---- looser title matching (TMDB title vs playlist title) -------------------------------------
+private val softNoise = setOf("hindi", "english", "dubbed", "dual", "audio", "multi", "sub", "subs", "esub", "web", "dl", "dts", "ac3", "aac", "org", "uncut", "extended", "remastered", "bd")
+private val yearToken = Regex("(19|20)\\d{2}")
+private val leadStop = setOf("the", "a", "an")
+
+/** Words that identify a title: years, language/quality tags and a leading "the" are dropped. */
+fun fuzzyTokens(norm: String): List<String> {
+    val all = norm.split(' ').filter { it.isNotEmpty() }
+    var t = all.filter { it !in softNoise && !yearToken.matches(it) }
+    if (t.isEmpty()) t = all                                   // titles that are only a year, e.g. "1917"
+    return if (t.size > 1 && t.first() in leadStop) t.drop(1) else t
+}
+
+/**
+ * Same title despite different decoration? Spacing/hyphen differences ("spider man" = "spiderman") and one stray word
+ * (Jaccard >= 0.8) are fine. A title that merely contains the other ("The Dark Knight" / "...Rises") only counts when both
+ * years are known and agree.
+ */
+fun fuzzyAccept(a: List<String>, b: List<String>, yearA: Int?, yearB: Int?): Boolean {
+    if (a.isEmpty() || b.isEmpty()) return false
+    if (yearA != null && yearB != null && kotlin.math.abs(yearA - yearB) > 1) return false
+    if (a.joinToString("") == b.joinToString("")) return true
+    val sa = a.toSet(); val sb = b.toSet()
+    val inter = sa.intersect(sb).size
+    if (inter.toDouble() / sa.union(sb).size >= 0.8 && minOf(sa.size, sb.size) >= 2) return true
+    val subset = inter == minOf(sa.size, sb.size)
+    return subset && inter >= 2 && sa.size.coerceAtLeast(sb.size) - inter <= 2 && yearA != null && yearB != null
+}
