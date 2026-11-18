@@ -1,6 +1,6 @@
 # Installs the debug APK on your Fire TV over the network.
 # Usage:  .\install.ps1 -Ip 192.168.1.50 [-Build]
-# On the Fire TV: Settings > My Fire TV > Developer Options > ADB debugging ON; accept the prompt on screen.
+# On the Fire TV: Settings > My Fire TV > Developer Options > ADB debugging ON. The first time, accept the prompt on screen.
 param(
     [Parameter(Mandatory = $true)][string]$Ip,
     [int]$Port = 5555,
@@ -16,8 +16,15 @@ if ($Build -or -not (Test-Path "app\build\outputs\apk\debug\app-debug.apk")) { &
 
 $target = "${Ip}:${Port}"
 adb connect $target
-Write-Host "If the TV shows 'Allow USB debugging?', choose Always allow, then press Enter here."; [void](Read-Host)
-adb -s $target wait-for-device
+# Wait for the TV (no Enter needed). Only if it is waiting for your approval does it say so.
+$deadline = (Get-Date).AddSeconds(60); $warned = $false
+while ($true) {
+    $state = (adb -s $target get-state 2>&1 | Out-String).Trim()
+    if ($state -eq "device") { break }
+    if ((Get-Date) -gt $deadline) { throw "Could not reach the TV (state: $state). Check that ADB debugging is on and the IP is right." }
+    if (-not $warned -and $state -match "unauthorized") { Write-Host "The TV is asking 'Allow USB debugging?'. Choose Allow (tick Always allow once) with the remote." -ForegroundColor Yellow; $warned = $true }
+    Start-Sleep -Seconds 2
+}
 
 $abis = (adb -s $target shell getprop ro.product.cpu.abilist).Trim()
 $want = (Select-String -Path gradle.properties -Pattern '^pstv\.abi=(.+)$').Matches.Groups[1].Value
