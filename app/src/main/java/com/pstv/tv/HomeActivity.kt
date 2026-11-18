@@ -223,6 +223,8 @@ class HomeActivity : BaseActivity(), CardHost {
         if (kind == Kind.MOVIE) "Top rated movies" else "Top rated series", ranked = true, lazy = true) { o, _ -> if (o == 0) Tmdb.topRatedInPlaylist(kind) else emptyList() }
 
     private fun homeRow(key: String): RowDesc? = when (key) {
+        "recentm" -> RowDesc("recentm", "Continue watching movies") { o, _ -> if (o == 0) Db.recents(30, Kind.MOVIE) else emptyList() }
+        "recents" -> RowDesc("recents", "Continue watching series") { o, _ -> if (o == 0) Db.recents(30, Kind.SERIES) else emptyList() }
         "recent" -> RowDesc("recent", "Continue Watching") { o, _ -> if (o == 0) Db.recents() else emptyList() }
         "trendm" -> if (Tmdb.enabled) trending(Kind.MOVIE) else null
         "trends" -> if (Tmdb.enabled) trending(Kind.SERIES) else null
@@ -270,7 +272,7 @@ class HomeActivity : BaseActivity(), CardHost {
         if (tab != 1) return
         scope.launch {
             var rebuild = false
-            for (k in listOf("recent", "favs", "livehist")) {
+            for (k in listOf("recentm", "recents", "favs", "livehist")) {
                 if (!Prefs.homeRows.split(',').contains(k)) continue          // hidden in Settings
                 val row = rows.find { it.key == k }
                 val fresh = withContext(Dispatchers.IO) { homeRow(k)?.load(0, 60).orEmpty() }

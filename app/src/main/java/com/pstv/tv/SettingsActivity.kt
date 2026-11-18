@@ -187,6 +187,7 @@ class SettingsActivity : BaseActivity() {
         row("Rewind step", { "${Prefs.rwStep} seconds" }) { choose("Rewind step", listOf(5, 10, 30, 60).map { "$it seconds" to it }, Prefs.rwStep) { Prefs.rwStep = it } }
 
         section("PLAYER · BOTH")
+        row("Autoplay next episode", { if (Prefs.autoNext) "On: the next episode starts when one ends" else "Off" }) { Prefs.autoNext = !Prefs.autoNext }
         row("Match framerate", { if (Prefs.matchFps) "On (asks the TV for a matching refresh rate if it offers one)" else "Off" }) { Prefs.matchFps = !Prefs.matchFps }
     }
 
@@ -208,7 +209,7 @@ class SettingsActivity : BaseActivity() {
     }
 
     private val rowNames = linkedMapOf(
-        "recent" to "Continue Watching", "trendm" to "Today's trending movies", "trends" to "Today's trending series", "popm" to "Popular movies", "pops" to "Popular series", "topm" to "Top rated movies", "tops" to "Top rated series", "favs" to "Favorites",
+        "recentm" to "Continue watching movies", "recents" to "Continue watching series", "trendm" to "Today's trending movies", "trends" to "Today's trending series", "popm" to "Popular movies", "pops" to "Popular series", "topm" to "Top rated movies", "tops" to "Top rated series", "favs" to "Favorites",
         "livehist" to "Recently watched channels", "newm" to "Recently added (movies)", "news" to "Recently added (series)",
     )
 

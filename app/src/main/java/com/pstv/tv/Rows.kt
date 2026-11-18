@@ -58,6 +58,7 @@ object Card {
     fun h(c: Context, item: Item) = Tokens.pxi(c, if (item.isWide) R.dimen.wide_h else R.dimen.poster_h)
 
     fun sub(item: Item): String = when {
+        item.note != null && item.progress <= 0f -> item.note          // "Next: S1 E2"
         item.progress > 0f -> listOfNotNull(item.note, "${(item.progress * 100).toInt()}% watched").joinToString("  •  ")
         item.kind == Kind.LIVE -> item.group
         else -> listOfNotNull(item.year?.toString(), item.genres?.substringBefore(',')).joinToString("  •  ")

@@ -55,6 +55,7 @@ class PlayerActivity : BaseActivity() {
     private var matched = false
     private var hasExtSub = false
     private var parentUrl: String? = null
+    private var episodeList: List<Xtream.Episode> = emptyList()
     private var epLabel: String? = null
 
     private var channels: List<Item> = emptyList()
@@ -86,6 +87,8 @@ class PlayerActivity : BaseActivity() {
         year = i.getIntExtra("year", -1).takeIf { it > 0 }
         parentUrl = i.getStringExtra("parent")?.ifEmpty { null }; epLabel = i.getStringExtra("label")?.ifEmpty { null }
         setTitles()
+        // Series: fetch the episode list so we know what comes next
+        parentUrl?.let { p -> if (kind == Kind.SERIES) scope.launch { episodeList = withContext(Dispatchers.IO) { runCatching { Xtream.episodes(p) }.getOrDefault(emptyList()) } } }
 
         seeker = SeekController({ engine }) { t, d -> showOverlay(preview = t, previewDur = d) }
         root.addOnLayoutChangeListener { _, l, t, r, bt, ol, ot, orr, ob -> if (r - l != orr - ol || bt - t != ob - ot) engine?.setAspect(Prefs.aspect) }
@@ -141,7 +144,12 @@ class PlayerActivity : BaseActivity() {
             updateChips()
             engine?.let { e -> matchFrameRate(e.info().fps); e.setAspect(Prefs.aspect); e.applySubtitleStyle() }
         }
-        override fun onEnded() { if (!isLive) { Db.saveProgress(key, 0, 1); finish() } }
+        override fun onEnded() {
+            if (isLive) return
+            Db.saveProgress(key, 10, 10)                       // finished: drop it from Continue Watching
+            val n = nextEpisode()
+            if (n != null && Prefs.autoNext) playNext(n) else { queueNext(); finish() }
+        }
         override fun onError(msg: String) { handleProblem(msg) }
         override fun onPlayState(playing: Boolean) { pPlay.text = if (playing) "Pause" else "Play"; pPlay.setCompoundDrawablesWithIntrinsicBounds(if (playing) R.drawable.ic_pause else R.drawable.ic_play, 0, 0, 0) }
     }
@@ -197,11 +205,33 @@ class PlayerActivity : BaseActivity() {
         }
     }
 
+    private fun nextEpisode(): Xtream.Episode? {
+        val i = episodeList.indexOfFirst { it.url == key }
+        return if (i >= 0) episodeList.getOrNull(i + 1) else null
+    }
+
+    /** Finished (or nearly) an episode: Continue Watching should offer the next one. */
+    private fun queueNext() {
+        val n = nextEpisode() ?: return
+        val p = parentUrl ?: return
+        Db.saveProgress(n.url, 0, 0, p, "Next: S${n.season} E${n.number}")
+    }
+
+    private fun playNext(n: Xtream.Episode) {
+        key = n.url; season = n.season; episode = n.number
+        title = "${cleanTitle(baseName)}  S${n.season}E${n.number}"
+        epLabel = "S${n.season} E${n.number}"
+        resumeMs = 0; retries = 0; audioWarned = false
+        setTitles()
+        showBanner("Next episode: S${n.season} E${n.number}")
+        start(n.url, 0)
+    }
+
     private fun saveProgress() {
         val e = engine ?: return
         if (isLive) return
         val dur = e.duration
-        if (dur > 0 && e.position > 5000) Db.saveProgress(key, e.position, dur, parentUrl, epLabel)
+        if (dur > 0 && e.position > 5000) { Db.saveProgress(key, e.position, dur, parentUrl, epLabel); if (e.position > dur * 0.95) queueNext() }
     }
 
     private var tick = 0

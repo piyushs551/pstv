@@ -174,7 +174,7 @@ object Db {
     fun recents(limit: Int = 30, kind: Kind? = null): List<Item> {
         val seen = HashSet<String>()
         return rd.rawQuery(
-            "SELECT $I_COLS, r.pos, r.dur, r.label FROM recents r JOIN items i ON i.url=COALESCE(r.parent, r.url) WHERE r.pos > 10000 ${if (kind != null) "AND i.kind=${kind.ordinal}" else ""} ORDER BY r.ts DESC LIMIT ${limit * 3}", null
+            "SELECT $I_COLS, r.pos, r.dur, r.label FROM recents r JOIN items i ON i.url=COALESCE(r.parent, r.url) WHERE (r.pos > 10000 OR r.label LIKE 'Next:%') ${if (kind != null) "AND i.kind=${kind.ordinal}" else ""} ORDER BY r.ts DESC LIMIT ${limit * 3}", null
         ).use { c -> buildList { while (c.moveToNext()) { val it = c.item(extra = true); if (seen.add(it.url)) add(it) } } }.take(limit)
     }
 

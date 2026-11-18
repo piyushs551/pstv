@@ -65,6 +65,8 @@ object Prefs {
     /** Top-right clock: "est" (Eastern, shows EST/EDT), "device" (the TV's own zone) or "off". */
     var clockMode: String get() = s("clock", "est"); set(v) = put("clock", v)
     var clock24: Boolean get() = i("clock24", 0) == 1; set(v) = put("clock24", if (v) 1 else 0)
+    /** When an episode ends, play the next one automatically. */
+    var autoNext: Boolean get() = i("autonext", 1) == 1; set(v) = put("autonext", if (v) 1 else 0)
     var anim: Int get() = i("anim", 2); set(v) = put("anim", v)
     var hero: Boolean get() = i("hero", 1) == 1; set(v) = put("hero", if (v) 1 else 0)
     var tabFocusSwitch: Boolean get() = i("tabfocus", 1) == 1; set(v) = put("tabfocus", if (v) 1 else 0)
@@ -73,13 +75,15 @@ object Prefs {
     var bufferMb: Int get() = i("bufmb", 32); set(v) = put("bufmb", v)
     var ua: String get() = s("ua", "PSTV/0.1").ifBlank { "PSTV/0.1" }; set(v) = put("ua", v.trim())
     /** Ordered home row keys; a leading '!' hides the row. */
-    var homeRows: String get() = s("homerows", DEFAULT_ROWS); set(v) = put("homerows", v)
+    var homeRows: String
+        get() = s("homerows", DEFAULT_ROWS).replace(Regex("(^|,)(!?)recent(?=,|$)")) { "${it.groupValues[1]}${it.groupValues[2]}recentm,${it.groupValues[2]}recents" }   // legacy single row -> two
+        set(v) = put("homerows", v)
     var epgUrl: String get() = s("epgurl"); set(v) = put("epgurl", v.trim())
     var epgAuto: String get() = s("epgauto"); set(v) = put("epgauto", v)
     var epgOnlyWithData: Boolean get() = i("epgonly", 1) == 1; set(v) = put("epgonly", if (v) 1 else 0)
     var epgLast: Long get() = sp.getLong("epglast", 0); set(v) = sp.edit().putLong("epglast", v).apply()
 
-    const val DEFAULT_ROWS = "recent,trendm,trends,popm,pops,topm,tops,favs,livehist,newm,news"
+    const val DEFAULT_ROWS = "recentm,recents,trendm,trends,popm,pops,topm,tops,favs,livehist,newm,news"
 
     fun rawGet(k: String) = sp.getString(k, "") ?: ""
     fun rawPut(k: String, v: String) = sp.edit().putString(k, v).apply()
