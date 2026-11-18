@@ -47,6 +47,12 @@ fun normTitle(raw: String): String {
     return s.split(' ').filter { it !in noiseTokens }.joinToString(" ")
 }
 
+private val qualRe = Regex("(?i)\\b(4k|uhd|2160p|fhd|1080p|720p|480p|hd|sd|hdcam|cam|hdrip|webrip|web-dl|bluray|brrip|dvdrip|hevc|x265|hdr|dolby|atmos)\\b")
+
+/** Quality tags found in a title ("4K", "UHD HEVC", "CAM"...), or null. */
+fun qualityTag(name: String): String? =
+    qualRe.findAll(name).map { it.value.uppercase() }.distinct().take(2).toList().takeIf { it.isNotEmpty() }?.joinToString(" ")
+
 fun yearOf(raw: String): Int? =
     yearParen.find(raw)?.groupValues?.get(1)?.toIntOrNull()
         ?: yearTail.find(raw.trim())?.groupValues?.get(1)?.toIntOrNull()

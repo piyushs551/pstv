@@ -38,10 +38,10 @@
 
                 <TextView android:id="@+id/info_recs_label" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:fontFamily="@string/font_strong" android:text="More like this" android:textColor="@color/text" android:textSize="@dimen/type_body" />
                 <TextView android:id="@+id/info_recs_msg" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textColor="@color/text_dim" android:textSize="@dimen/type_caption" />
-                <androidx.recyclerview.widget.RecyclerView android:id="@+id/info_recs" android:layout_width="match_parent" android:layout_height="wrap_content" android:clipChildren="false" android:clipToPadding="false" android:paddingBottom="2dp" android:paddingTop="10dp" android:visibility="gone" />
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/info_recs" android:layout_width="match_parent" android:layout_height="wrap_content" android:clipChildren="false" android:clipToPadding="false" android:paddingBottom="14dp" android:paddingTop="16dp" android:visibility="gone" />
 
                 <TextView android:id="@+id/info_same_label" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:fontFamily="@string/font_strong" android:text="Other versions in your playlist" android:textColor="@color/text" android:textSize="@dimen/type_body" android:visibility="gone" />
-                <androidx.recyclerview.widget.RecyclerView android:id="@+id/info_same" android:layout_width="match_parent" android:layout_height="wrap_content" android:clipChildren="false" android:clipToPadding="false" android:paddingBottom="2dp" android:paddingTop="10dp" android:visibility="gone" />
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/info_same" android:layout_width="match_parent" android:layout_height="wrap_content" android:clipChildren="false" android:clipToPadding="false" android:paddingBottom="14dp" android:paddingTop="16dp" android:visibility="gone" />
             </LinearLayout>
         </ScrollView>
     </LinearLayout>

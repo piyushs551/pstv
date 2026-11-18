@@ -72,7 +72,7 @@ class InfoDialog(private val act: BaseActivity, private var item: Item, private 
         val same = Db.sameName(item)
         if (same.isNotEmpty()) {
             dialog.findViewById<View>(R.id.info_same_label).visibility = View.VISIBLE
-            fill(R.id.info_same, same)
+            fill(R.id.info_same, same, tagMode = 1)
         }
 
         val msg = dialog.findViewById<TextView>(R.id.info_recs_msg)
@@ -88,9 +88,9 @@ class InfoDialog(private val act: BaseActivity, private var item: Item, private 
         }
     }
 
-    private fun fill(id: Int, items: List<Item>) {
+    private fun fill(id: Int, items: List<Item>, tagMode: Int = 0) {
         val rv = dialog.findViewById<RecyclerView>(id)
-        val row = RowDesc("info$id", "") { _, _ -> emptyList() }.also { it.items.addAll(items); it.done = true; it.started = true }
+        val row = RowDesc("info$id", "", tagMode = tagMode) { _, _ -> emptyList() }.also { it.items.addAll(items); it.done = true; it.started = true }
         rv.layoutManager = LinearLayoutManager(act, RecyclerView.HORIZONTAL, false)
         rv.itemAnimator = null
         rv.adapter = CardAdapter(row, this)

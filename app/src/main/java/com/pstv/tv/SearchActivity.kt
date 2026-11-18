@@ -113,7 +113,7 @@ class SearchActivity : BaseActivity(), CardHost {
         val found = Db.search(text, 300)
         fun row(key: String, title: String, kind: Kind): RowDesc? {
             val l = found.filter { it.kind == kind }
-            return if (l.isEmpty()) null else RowDesc(key, "$title  ·  ${l.size}") { o, _ -> if (o == 0) l else emptyList() }
+            return if (l.isEmpty()) null else RowDesc(key, "$title  ·  ${l.size}", tagMode = 2) { o, _ -> if (o == 0) l else emptyList() }
         }
         return listOfNotNull(
             if (filter == 0 || filter == 1) row("m", "Movies", Kind.MOVIE) else null,

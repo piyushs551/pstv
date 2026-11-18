@@ -34,6 +34,24 @@
             android:textSize="@dimen/type_display"
             android:visibility="gone" />
 
+        <TextView
+            android:id="@+id/card_tag"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|left"
+            android:layout_margin="8dp"
+            android:background="@drawable/tag_bg"
+            android:ellipsize="end"
+            android:fontFamily="@string/font_medium"
+            android:maxLines="1"
+            android:paddingBottom="2dp"
+            android:paddingLeft="7dp"
+            android:paddingRight="7dp"
+            android:paddingTop="2dp"
+            android:textColor="@color/text"
+            android:textSize="@dimen/type_micro"
+            android:visibility="gone" />
+
         <View
             android:id="@+id/card_bar"
             android:layout_width="0dp"
@@ -46,6 +64,8 @@
     <!-- Title appears under the focused card only (space is reserved so rows never jump) -->
     <LinearLayout
         android:id="@+id/card_caption"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:layout_width="match_parent"
         android:layout_height="@dimen/caption_h"
         android:alpha="0"

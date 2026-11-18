@@ -40,6 +40,7 @@ class ShotsTest {
         Db.replaceAll { sink ->
             for (g in listOf("News", "Sports", "Kids")) for (i in 1..12) sink(Item(0, Kind.LIVE, g, "Sample Channel $g $i", null, "http://x/live/$g$i", tvg = "ch$g$i".lowercase()))
             for (g in listOf("Action", "Drama")) for (i in 1..12) sink(Item(0, Kind.MOVIE, g, "Sample Movie $g $i (20${10 + i})", null, "http://x/movie/$g$i.mp4", year = 2010 + i, overview = "Placeholder plot text for layout preview only. It runs over a few lines so the hero plot area can be judged for spacing.", rating = 7.5f, genres = "Action, Drama"))
+            sink(Item(0, Kind.MOVIE, "Action 4K", "Sample Movie Action 3 UHD 4K (2013)", null, "http://x/movie/a3uhd.mp4")); sink(Item(0, Kind.MOVIE, "Action CAM", "Sample Movie Action 3 CAM", null, "http://x/movie/a3cam.mp4"))
             for (i in 1..12) sink(Item(0, Kind.SERIES, "Shows", "Sample Series $i", null, "xs:$i"))
         }
         val now = System.currentTimeMillis(); val h = 3_600_000L; val base = now - now % h

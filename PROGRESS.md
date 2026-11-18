@@ -50,6 +50,8 @@ Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending 
 
 - Clock top right on Home/Live/EPG/Movies/TV shows (Settings > Appearance: Eastern EST/EDT default, device zone, off; 12/24 h).
 
+- Round 6: zoom no longer cuts text/image (caption not clipped, more headroom around rows and in the info dialog); "Other versions" cards (and search results) carry a quality/category tag (qualityTag); launcher banner moved to drawable-nodpi with explicit activity icon/banner/logo. ICON STILL BROKEN ON DEVICE per user: needs diagnosis (uninstall/reinstall test, dumpsys package).
+
 ## Engine decision (round 3)
 - User reported MPV crashes on the stick and live MP2 audio is silent on ExoPlayer. MPV removed; Media3 upgraded 1.4.1 -> 1.7.1 and NextLib FFmpeg decoders added (software fallback for unsupported audio). UNVERIFIED on device. If a stream is still silent, report the track label from Audio panel.
 

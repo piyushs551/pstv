@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** One horizontal row. Items load lazily (only when the row is first bound) and page in as you scroll. */
-class RowDesc(val key: String, val title: String, val ranked: Boolean = false, val lazy: Boolean = false, val load: (offset: Int, limit: Int) -> List<Item>) {
+class RowDesc(val key: String, val title: String, val ranked: Boolean = false, val lazy: Boolean = false, val tagMode: Int = 0, val load: (offset: Int, limit: Int) -> List<Item>) {
     val items = ArrayList<Item>()
     var loading = false
     var done = false
@@ -70,6 +70,7 @@ class CardAdapter(private val row: RowDesc, private val host: CardHost) : Recycl
         val frame: View = v.findViewById(R.id.card_frame)
         val img: ImageView = v.findViewById(R.id.card_img)
         val rank: TextView = v.findViewById(R.id.card_rank)
+        val tag: TextView = v.findViewById(R.id.card_tag)
         val caption: View = v.findViewById(R.id.card_caption)
         val label: TextView = v.findViewById(R.id.card_label)
         val sub: TextView = v.findViewById(R.id.card_sub)
@@ -101,7 +102,11 @@ class CardAdapter(private val row: RowDesc, private val host: CardHost) : Recycl
         Images.card(h.img, item.cardArt, cleanTitle(item.name), w, ht, when (item.kind) { Kind.LIVE -> R.drawable.ic_live; Kind.MOVIE -> R.drawable.ic_movies; Kind.SERIES -> R.drawable.ic_shows },
             if (logoOnly) { bmp -> if (h.itemView.tag == item.url) h.frame.setBackgroundResource(if (Images.isDark(bmp)) R.drawable.card_bg_light else R.drawable.card_bg) } else null)
         h.label.text = cleanTitle(item.name)
-        h.sub.text = Card.sub(item)
+        h.sub.text = if (row.tagMode == 1) item.group else Card.sub(item)
+        // tagMode 1 ("other versions"): quality tag, else the category; tagMode 2: quality tag only
+        val tagText = when (row.tagMode) { 1 -> qualityTag(item.name) ?: item.group.takeIf { it.isNotBlank() }?.take(18); 2 -> qualityTag(item.name); else -> null }
+        h.tag.visibility = if (tagText != null && !row.ranked) View.VISIBLE else View.GONE
+        h.tag.text = tagText
         h.caption.animate().cancel(); h.caption.alpha = 0f
         h.itemView.animate().cancel(); h.itemView.alpha = if (row.focusedPos >= 0 && pos != row.focusedPos) Anim.dimAlpha else 1f
         h.rank.visibility = if (row.ranked) View.VISIBLE else View.GONE

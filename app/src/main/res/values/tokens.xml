@@ -46,7 +46,7 @@
     <dimen name="wide_w">216dp</dimen>
     <dimen name="wide_h">122dp</dimen>
     <dimen name="card_gap">12dp</dimen>
-    <dimen name="caption_h">38dp</dimen>
+    <dimen name="caption_h">46dp</dimen>
 
     <!-- Focus: ~9% scale, ~150 ms, neighbours dimmed -->
     <item name="focus_scale" format="float" type="dimen">1.09</item>
