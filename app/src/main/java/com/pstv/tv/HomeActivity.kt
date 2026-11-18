@@ -185,7 +185,7 @@ class HomeActivity : BaseActivity(), CardHost {
 
     // ---- rows (Home / Movies / TV shows) --------------------------------------------------------
 
-    private fun groupRows(kind: Kind) = Db.groups(kind).map { g -> RowDesc("g:${g.kind}:${g.name}", g.name) { o, l -> Db.page(g.kind, g.name, o, l) } }
+    private fun groupRows(kind: Kind) = Categories.apply(kind, Db.groups(kind)).map { g -> RowDesc("g:${g.kind}:${g.name}", g.name) { o, l -> Db.page(g.kind, g.name, o, l) } }
 
     private fun trending(kind: Kind) = RowDesc(if (kind == Kind.MOVIE) "trendm" else "trends",
         if (kind == Kind.MOVIE) "Today's trending movies" else "Today's trending series", ranked = true, lazy = true) { o, _ -> if (o == 0) Tmdb.trendingInPlaylist(kind) else emptyList() }

@@ -42,7 +42,7 @@ class LivePage(private val act: HomeActivity, root: View) : CardHost {
                 val c = ArrayList<Cat>()
                 if (Db.recentLive(1).isNotEmpty()) c += Cat("Recently watched channels") { o, _ -> if (o == 0) Db.recentLive() else emptyList() }
                 c += Cat("Latest channels added") { o, l -> Db.latest(Kind.LIVE, o, l) }
-                for (g in Db.groups(Kind.LIVE)) c += Cat(g.name) { o, l -> Db.page(Kind.LIVE, g.name, o, l) }
+                for (g in Categories.apply(Kind.LIVE, Db.groups(Kind.LIVE))) c += Cat(g.name) { o, l -> Db.page(Kind.LIVE, g.name, o, l) }
                 c
             }
             cats = list

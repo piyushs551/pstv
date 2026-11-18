@@ -123,6 +123,11 @@ class SettingsActivity : BaseActivity() {
         row("Switch tabs when focused", { if (Prefs.tabFocusSwitch) "On" else "Off (press OK to switch)" }) { Prefs.tabFocusSwitch = !Prefs.tabFocusSwitch }
         row("Home rows", { "Choose and reorder" }) { homeRowsDialog() }
 
+        section("CATEGORIES")
+        row("Live categories", { "Reorder or hide" }) { startActivity(android.content.Intent(this, CategoriesActivity::class.java).putExtra("kind", Kind.LIVE.ordinal)) }
+        row("Movie categories", { "Reorder or hide (for example Indian first)" }) { startActivity(android.content.Intent(this, CategoriesActivity::class.java).putExtra("kind", Kind.MOVIE.ordinal)) }
+        row("TV show categories", { "Reorder or hide" }) { startActivity(android.content.Intent(this, CategoriesActivity::class.java).putExtra("kind", Kind.SERIES.ordinal)) }
+
         section("ARTWORK & PLOTS")
         row("TMDB API key", { keyLabel(Prefs.tmdbKeyUser, BuildConfig.TMDB_KEY) }) { edit("TMDB API key (v3). Leave empty to use the built-in key", Prefs.tmdbKeyUser, password = true) { Prefs.tmdbKeyUser = it; Prefs.trendingAt = 0 } }
         row("Test TMDB key", { "Checks that TMDB accepts the key" }) { toast("Checking…"); Repo.scope.launch { val m = Tmdb.test(); runOnUiThread { toast(m) } } }

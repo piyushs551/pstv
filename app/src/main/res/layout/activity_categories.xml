@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:orientation="vertical"
+    android:paddingLeft="@dimen/safe_h"
+    android:paddingRight="@dimen/safe_h"
+    android:paddingTop="@dimen/safe_v">
+
+    <TextView android:id="@+id/cat_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@string/font_strong" android:textColor="@color/text" android:textSize="@dimen/type_headline" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp" android:layout_marginTop="2dp" android:text="Press OK on a category to move or hide it. Moved categories appear first. Changes show next time the tab opens." android:textColor="@color/text_dim" android:textSize="@dimen/type_caption" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/cat_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/safe_v" />
+</LinearLayout>

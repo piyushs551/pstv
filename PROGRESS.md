@@ -35,7 +35,7 @@ Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending 
 - Continue Watching: rows empty at load are added later (refreshPersonalRows); Movies/TV tabs get their own Continue watching row. NOTE watch history saved before the Db v3 update has no series link and cannot show.
 - Series page: Season is a dropdown popup under the button; episode stills/titles/plots from TMDB (Tmdb.seasonEpisodes).
 - Blank logo cards: light backing is chosen from the logo's luminance (Images.isDark).
-- TODO still: Settings screen to reorder/hide category rows per tab.
+- DONE: Settings > Categories (Categories.kt, CategoriesActivity): reorder/hide per tab; applied in Home groupRows and Live sidebar.
 
 ## Decisions
 - API keys (TMDB, OpenSubtitles key+login) are baked in at build time from git-ignored keys.properties via scripts\set-keys.ps1; Settings shows "Built in" and can override. Replaces the earlier "user types keys in Settings".
