@@ -99,6 +99,41 @@ object Tmdb {
         catch (e: Exception) { if (e.message?.contains("401") == true) "TMDB rejected the key (use the v3 API Key, not the Read Access Token)" else "Could not reach TMDB: ${e.message}" }
     }
 
+    private val movieIds = ConcurrentHashMap<String, Int>()
+
+    private fun movieId(item: Item): Int? {
+        movieIds[item.url]?.let { return it }
+        val q = URLEncoder.encode(cleanTitle(item.name), "UTF-8")
+        val yearParam = item.year?.let { "&year=$it" } ?: ""
+        val arr = JSONObject(Http.getString("$API/search/movie?api_key=${key()}&query=$q$yearParam")).optJSONArray("results") ?: return null
+        val want = normTitle(item.name)
+        var id: Int? = null
+        for (i in 0 until arr.length()) { val o = arr.getJSONObject(i); if (normTitle(o.optString("title")) == want) { id = o.optInt("id"); break } }
+        id = id ?: arr.optJSONObject(0)?.optInt("id")
+        id?.let { movieIds[item.url] = it }
+        return id
+    }
+
+    /** "More like this": TMDB recommendations + similar titles, kept only if they exist in the playlist. */
+    fun recommendationsInPlaylist(item: Item): List<Item> {
+        if (!enabled || item.kind == Kind.LIVE) return emptyList()
+        val tv = item.kind == Kind.SERIES
+        val id = (if (tv) tvId(item) else movieId(item)) ?: return emptyList()
+        val base = if (tv) "tv" else "movie"
+        val titles = ArrayList<Title>()
+        for (kindPath in listOf("recommendations", "similar")) {
+            runCatching { titles += parse(JSONObject(Http.getString("$API/$base/$id/$kindPath?api_key=${key()}")).optJSONArray("results"), tv) }
+        }
+        val out = ArrayList<Item>(); val seen = HashSet<Long>(); seen.add(item.id)
+        for (t in titles) {
+            val hit = Db.matchTitle(normTitle(t.name), item.kind, t.year) ?: t.alt?.let { Db.matchTitle(normTitle(it), item.kind, t.year) } ?: continue
+            if (!seen.add(hit.id)) continue
+            Db.saveMeta(hit, t.year, t.overview, t.backdrop, t.poster, t.rating, t.genres)
+            out += Db.byId(hit.id) ?: hit
+        }
+        return out
+    }
+
     // ---- episodes (stills, plots) --------------------------------------------------------------
     private val tvIds = ConcurrentHashMap<String, Int>()
 

@@ -334,10 +334,7 @@ class HomeActivity : BaseActivity(), CardHost {
 
     override fun onCardClick(item: Item) = Nav.open(this, item)
 
-    override fun onCardLongClick(item: Item) {
-        toast(if (Db.toggleFav(item.url)) "Added to Favorites" else "Removed from Favorites")
-        refreshPersonalRows()
-    }
+    override fun onCardLongClick(item: Item) = Nav.info(this, item) { refreshPersonalRows() }
 
     fun openCurrent(details: Boolean) {
         val it = hero.current ?: return

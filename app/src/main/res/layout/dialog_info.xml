@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/safe_v"
+    android:paddingTop="@dimen/safe_v">
+
+    <LinearLayout
+        android:layout_width="760dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/frost_panel"
+        android:orientation="vertical"
+        android:padding="1dp">
+
+        <FrameLayout android:layout_width="match_parent" android:layout_height="150dp">
+            <com.pstv.tv.CardImageView android:id="@+id/info_banner" android:layout_width="match_parent" android:layout_height="match_parent" />
+            <View android:layout_width="match_parent" android:layout_height="90dp" android:layout_gravity="bottom" android:background="@drawable/scrim_label" />
+            <TextView android:id="@+id/info_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="bottom" android:ellipsize="end" android:fontFamily="@string/font_strong" android:maxLines="2" android:paddingBottom="10dp" android:paddingLeft="20dp" android:paddingRight="20dp" android:textColor="@color/text" android:textSize="@dimen/type_headline" />
+        </FrameLayout>
+
+        <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:clipToPadding="false" android:paddingBottom="12dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingLeft="20dp" android:paddingRight="20dp" android:paddingTop="10dp">
+
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
+                    <TextView android:id="@+id/info_c1" style="@style/Chip" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView android:id="@+id/info_c2" style="@style/Chip" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView android:id="@+id/info_c3" style="@style/Chip" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+                <TextView android:id="@+id/info_plot" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:ellipsize="end" android:maxLines="5" android:textColor="@color/text" android:textSize="@dimen/type_caption" />
+                <TextView android:id="@+id/info_seasons" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:textColor="@color/text_dim" android:textSize="@dimen/type_caption" android:visibility="gone" />
+
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:orientation="horizontal">
+                    <TextView android:id="@+id/info_play" style="@style/BtnPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="8dp" android:drawableLeft="@drawable/ic_play" android:text="Play" />
+                    <TextView android:id="@+id/info_details" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="8dp" android:drawableLeft="@drawable/ic_info" android:text="Details" />
+                    <TextView android:id="@+id/info_fav" style="@style/Btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:drawableLeft="@drawable/ic_fav" android:text="Add to Favorites" />
+                </LinearLayout>
+
+                <TextView android:id="@+id/info_recs_label" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:fontFamily="@string/font_strong" android:text="More like this" android:textColor="@color/text" android:textSize="@dimen/type_body" />
+                <TextView android:id="@+id/info_recs_msg" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textColor="@color/text_dim" android:textSize="@dimen/type_caption" />
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/info_recs" android:layout_width="match_parent" android:layout_height="wrap_content" android:clipChildren="false" android:clipToPadding="false" android:paddingBottom="2dp" android:paddingTop="10dp" android:visibility="gone" />
+
+                <TextView android:id="@+id/info_same_label" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:fontFamily="@string/font_strong" android:text="Other versions in your playlist" android:textColor="@color/text" android:textSize="@dimen/type_body" android:visibility="gone" />
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/info_same" android:layout_width="match_parent" android:layout_height="wrap_content" android:clipChildren="false" android:clipToPadding="false" android:paddingBottom="2dp" android:paddingTop="10dp" android:visibility="gone" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</FrameLayout>

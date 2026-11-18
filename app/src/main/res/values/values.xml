@@ -21,6 +21,13 @@
         <item name="android:textColorSecondary">@color/text_dim</item>
     </style>
 
+    <style name="Theme.Pstv.Info" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:fontFamily">@string/font_regular</item>
+    </style>
+
     <style name="Btn">
         <item name="android:focusable">true</item>
         <item name="android:clickable">true</item>

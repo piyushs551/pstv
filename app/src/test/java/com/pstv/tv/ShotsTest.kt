@@ -85,6 +85,15 @@ class ShotsTest {
             override fun onCreateViewHolder(p: android.view.ViewGroup, t: Int) = object : androidx.recyclerview.widget.RecyclerView.ViewHolder(android.widget.TextView(p.context).apply { setBackgroundResource(R.drawable.row_bg); setTextColor(-1); setPadding(30, 24, 30, 24); layoutParams = androidx.recyclerview.widget.RecyclerView.LayoutParams(-1, -2) }) {}
             override fun onBindViewHolder(h: androidx.recyclerview.widget.RecyclerView.ViewHolder, i: Int) { (h.itemView as android.widget.TextView).text = rows[i] }
         }
+        run {
+            val it = Db.byUrl("http://x/movie/Action3.mp4")!!
+            InfoDialog(act, it).show()
+            settle()
+            val dv = org.robolectric.shadows.ShadowDialog.getLatestDialog().window!!.decorView
+            dv.measure(View.MeasureSpec.makeMeasureSpec(1920, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.EXACTLY)); dv.layout(0, 0, 1920, 1080)
+            val ib = Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888); Canvas(ib).also { c -> c.drawColor(0xFF101018.toInt()); dv.draw(c) }
+            File(out, "9_info.png").outputStream().use { Bitmap.createScaledBitmap(ib, 960, 540, true).compress(Bitmap.CompressFormat.PNG, 80, it) }
+        }
         pl.setBackgroundColor(0xFF2A3A4A.toInt())
         pl.measure(View.MeasureSpec.makeMeasureSpec(1920, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.EXACTLY)); pl.layout(0, 0, 1920, 1080)
         settle()

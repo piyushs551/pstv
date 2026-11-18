@@ -42,6 +42,12 @@ object Nav {
         if (item.kind == Kind.SERIES) details(c, item) else play(c, item)
     }
 
+    /** Long-press info for movies/series; live channels just toggle Favorites. */
+    fun info(act: BaseActivity, item: Item, onClose: (() -> Unit)? = null) {
+        if (item.kind == Kind.LIVE) { act.toast(if (Db.toggleFav(item.url)) "Added to Favorites" else "Removed from Favorites"); onClose?.invoke() }
+        else InfoDialog(act, item, onClose).show()
+    }
+
     fun details(c: Context, item: Item) =
         c.startActivity(Intent(c, DetailActivity::class.java).putExtra("url", item.url))
 

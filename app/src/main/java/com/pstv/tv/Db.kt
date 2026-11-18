@@ -115,6 +115,10 @@ object Db {
     fun latest(kind: Kind, offset: Int, limit: Int): List<Item> =
         query("SELECT $I_COLS FROM items i LEFT JOIN seen s ON s.url=i.url WHERE i.kind=? ORDER BY s.ts DESC, i.sort DESC LIMIT $limit OFFSET $offset", kind.ordinal.toString())
 
+    /** Other entries with the same normalised title (different quality / language versions). */
+    fun sameName(item: Item, limit: Int = 20): List<Item> =
+        query("SELECT $COLS FROM items WHERE norm=(SELECT norm FROM items WHERE url=?) AND url!=? AND kind=? ORDER BY sort LIMIT $limit", item.url, item.url, item.kind.ordinal.toString())
+
     fun byUrl(url: String): Item? = query("SELECT $COLS FROM items WHERE url=? LIMIT 1", url).firstOrNull()
 
     fun byId(id: Long): Item? = query("SELECT $COLS FROM items WHERE id=?", id.toString()).firstOrNull()

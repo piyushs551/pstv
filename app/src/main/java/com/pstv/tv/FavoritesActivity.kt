@@ -30,11 +30,11 @@ class FavoritesActivity : BaseActivity(), CardHost {
         scope.launch {
             val f = withContext(Dispatchers.IO) { Db.favorites(500) }
             row.items.clear(); row.items.addAll(f); adapter.notifyDataSetChanged()
-            findViewById<TextView>(R.id.fav_msg).text = if (f.isEmpty()) "No favorites yet. Press and hold OK on any card to add one." else "Press and hold OK on a card to remove it from favorites."
+            findViewById<TextView>(R.id.fav_msg).text = if (f.isEmpty()) "No favorites yet. Press and hold OK on any card to add one." else "Press and hold OK on a card for details, where you can remove it."
             if (focus) grid.post { grid.getChildAt(0)?.requestFocus() }
         }
     }
 
     override fun onCardClick(item: Item) = Nav.open(this, item)
-    override fun onCardLongClick(item: Item) { Db.toggleFav(item.url); toast("Removed from Favorites"); reload() }
+    override fun onCardLongClick(item: Item) = Nav.info(this, item) { reload() }
 }

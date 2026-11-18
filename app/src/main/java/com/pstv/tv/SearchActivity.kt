@@ -162,5 +162,5 @@ class SearchActivity : BaseActivity(), CardHost {
     }
 
     override fun onCardClick(item: Item) { remember(q.text.toString()); Nav.open(this, item) }
-    override fun onCardLongClick(item: Item) { toast(if (Db.toggleFav(item.url)) "Added to Favorites" else "Removed from Favorites") }
+    override fun onCardLongClick(item: Item) = Nav.info(this, item)
 }

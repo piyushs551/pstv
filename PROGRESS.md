@@ -37,6 +37,11 @@ Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending 
 - Blank logo cards: light backing is chosen from the logo's luminance (Images.isDark).
 - DONE: Settings > Categories (Categories.kt, CategoriesActivity): reorder/hide per tab; applied in Home groupRows and Live sidebar.
 
+## Round 3 features (built + previewed, not yet on TV)
+- Held D-pad keys no longer lose focus (explicit row moves + repeat throttle + focus safety net). Banner scrim lightened; Settings > banner mode for poster-only items.
+- Settings > Categories: reorder/hide per tab. Search page redesigned (chips, recent searches, grouped results); Favorites is its own screen.
+- Long-press OK on a movie/show = InfoDialog (banner, plot, seasons/episodes, TMDB "More like this" from the playlist, other versions of the same title). Live channels: long-press toggles favorite.
+
 ## Engine decision (round 3)
 - User reported MPV crashes on the stick and live MP2 audio is silent on ExoPlayer. MPV removed; Media3 upgraded 1.4.1 -> 1.7.1 and NextLib FFmpeg decoders added (software fallback for unsupported audio). UNVERIFIED on device. If a stream is still silent, report the track label from Audio panel.
 
