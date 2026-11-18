@@ -288,15 +288,46 @@ class HomeActivity : BaseActivity(), CardHost {
         }
     }
 
+    private var navBusyUntil = 0L
+    private val dpad = setOf(KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT)
+
+    /** Explicit move inside a row (default focus search loses focus when a held key outruns the layout). */
+    private fun moveInRow(rv: RecyclerView, target: Int, tries: Int = 0) {
+        val v = (rv.layoutManager as LinearLayoutManager).findViewByPosition(target)
+        if (v != null) { v.requestFocus(); return }
+        rv.scrollToPosition(target)
+        if (tries < 4) rv.post { moveInRow(rv, target, tries + 1) }
+    }
+
+    /** Safety net: if a fast key hold ever leaves nothing focused, put focus back where it was. */
+    override fun dispatchKeyEvent(e: KeyEvent): Boolean {
+        val r = super.dispatchKeyEvent(e)
+        if (e.action == KeyEvent.ACTION_UP && e.keyCode in dpad) rowsRv.postDelayed({
+            if (currentFocus == null && drawer.visibility != View.VISIBLE) when (tab) { 1, 4, 5 -> focusRow(curRow); 2 -> live.focusFirst(); 3 -> epg.focusFirst() }
+        }, 160)
+        return r
+    }
+
     override fun onCardKey(row: RowDesc, pos: Int, keyCode: Int, e: KeyEvent): Boolean {
         val idx = rows.indexOf(row)
+        val now = android.os.SystemClock.uptimeMillis()
+        // A held key repeats faster than rows can lay out: drop repeats while the previous move settles.
+        if (e.repeatCount > 0 && keyCode in dpad && now < navBusyUntil) return true
         return when (keyCode) {
-            KeyEvent.KEYCODE_DPAD_DOWN -> { focusRow(idx + 1); true }
+            KeyEvent.KEYCODE_DPAD_DOWN -> { navBusyUntil = now + 170; focusRow(idx + 1); true }
             KeyEvent.KEYCODE_DPAD_UP -> {
+                navBusyUntil = now + 170
                 if (idx <= 0) { if (Prefs.hero) findViewById<View>(R.id.hero_play).requestFocus() else focusTabs() } else focusRow(idx - 1); true
             }
-            KeyEvent.KEYCODE_DPAD_LEFT -> { if (pos == 0) { if (tab == 4 || tab == 5) openDrawer() else findViewById<View>(R.id.rail_search).requestFocus() }; pos == 0 }
-            KeyEvent.KEYCODE_DPAD_RIGHT -> pos >= row.items.size - 1
+            KeyEvent.KEYCODE_DPAD_LEFT -> {
+                if (pos == 0) { if (tab == 4 || tab == 5) openDrawer() else findViewById<View>(R.id.rail_search).requestFocus() }
+                else { navBusyUntil = now + 70; (currentFocus?.parent as? RecyclerView)?.let { moveInRow(it, pos - 1) } }
+                true
+            }
+            KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                if (pos < row.items.size - 1) { navBusyUntil = now + 70; (currentFocus?.parent as? RecyclerView)?.let { moveInRow(it, pos + 1) } }
+                true
+            }
             else -> false
         }
     }
@@ -357,15 +388,26 @@ class Hero(private val act: HomeActivity) {
         if (url == shownUrl) return@Runnable
         val my = ++token
         if (url.isNullOrBlank()) { swap(null, item, my); return@Runnable }
-        back.scaleType = if (item.backdrop != null) ImageView.ScaleType.CENTER_CROP else ImageView.ScaleType.FIT_END
+        back.scaleType = if (item.backdrop != null) ImageView.ScaleType.CENTER_CROP else if (Prefs.heroPoster == "right" || item.kind == Kind.LIVE) ImageView.ScaleType.FIT_END else ImageView.ScaleType.MATRIX
         back.load(url, Images.loader) {
             size(Size(w, h)); precision(Precision.INEXACT)
             listener(onSuccess = { _, _ -> swap(url, item, my) }, onError = { _, _ -> swap(null, item, my) })
         }
     }
 
+    /** Poster-only items in "fill" mode: scale to the banner width and keep the top part (faces) visible. */
+    private fun fitTop(v: ImageView) {
+        val d = v.drawable ?: return
+        val dw = d.intrinsicWidth; val dh = d.intrinsicHeight
+        if (dw <= 0 || dh <= 0) return
+        val s = maxOf(w.toFloat() / dw, h.toFloat() / dh)
+        v.scaleType = ImageView.ScaleType.MATRIX
+        v.imageMatrix = android.graphics.Matrix().apply { setScale(s, s); postTranslate(-(dw * s - w) / 2f, -(dh * s - h) * 0.18f) }
+    }
+
     private fun swap(url: String?, item: Item, my: Int) {
         if (my != token) return
+        if (url != null && item.backdrop == null && item.kind != Kind.LIVE && Prefs.heroPoster != "right") fitTop(back)
         if (url == null) back.scaleType = ImageView.ScaleType.FIT_XY
         if (url == null) back.setImageDrawable(NameTile(item.name, act, when (item.kind) { Kind.LIVE -> R.drawable.ic_live; Kind.MOVIE -> R.drawable.ic_movies; Kind.SERIES -> R.drawable.ic_shows }))
         shownUrl = url

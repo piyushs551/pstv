@@ -116,6 +116,9 @@ class SettingsActivity : BaseActivity() {
             choose("UI size", listOf("Compact · 75%" to 75, "Compact · 85% (default)" to 85, "Medium · 100%" to 100, "Large · 115%" to 115), Prefs.uiScale) { Prefs.uiScale = it; recreate() }
         }
         row("Animations", { listOf("Off", "Fast", "Normal")[Prefs.anim] }) { choose("Animations (focus zoom and banner fade)", listOf("Off" to 0, "Fast" to 1, "Normal" to 2), Prefs.anim) { Prefs.anim = it } }
+        row("Banner when there is no wide art", { if (Prefs.heroPoster == "right") "Poster on the right" else "Fill the banner (cropped)" }) {
+            choose("Banner without wide art (TMDB provides wide art once the key works)", listOf("Fill the banner (cropped)" to "fill", "Poster on the right" to "right"), Prefs.heroPoster) { Prefs.heroPoster = it }
+        }
         row("Hero banner", { if (Prefs.hero) "On" else "Off (rows only, uses less memory)" }) { Prefs.hero = !Prefs.hero }
         row("Switch tabs when focused", { if (Prefs.tabFocusSwitch) "On" else "Off (press OK to switch)" }) { Prefs.tabFocusSwitch = !Prefs.tabFocusSwitch }
         row("Home rows", { "Choose and reorder" }) { homeRowsDialog() }
