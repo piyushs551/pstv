@@ -202,3 +202,11 @@ class RowsAdapter(val rows: MutableList<RowDesc>, private val host: CardHost) : 
         if (tries < 10) vh.itemView.post { focusRow(vh, row, tries + 1) }
     }
 }
+
+/** Explicit move inside a horizontal row (default focus search loses focus when a held key outruns the layout). */
+fun moveInRow(rv: RecyclerView, target: Int, tries: Int = 0) {
+    val v = (rv.layoutManager as LinearLayoutManager).findViewByPosition(target)
+    if (v != null) { v.requestFocus(); return }
+    rv.scrollToPosition(target)
+    if (tries < 4) rv.post { moveInRow(rv, target, tries + 1) }
+}

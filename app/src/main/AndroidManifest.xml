@@ -30,6 +30,7 @@
         </activity>
         <activity android:name=".SearchActivity" android:screenOrientation="landscape" android:windowSoftInputMode="stateHidden|adjustPan" />
         <activity android:name=".SettingsActivity" android:screenOrientation="landscape" android:windowSoftInputMode="stateHidden|adjustPan" />
+        <activity android:name=".FavoritesActivity" android:screenOrientation="landscape" />
         <activity android:name=".CategoriesActivity" android:screenOrientation="landscape" />
         <activity android:name=".DetailActivity" android:screenOrientation="landscape" />
         <activity

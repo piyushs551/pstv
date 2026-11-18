@@ -72,7 +72,7 @@ class HomeActivity : BaseActivity(), CardHost {
             t.setOnKeyListener { _, k, e -> if (k == KeyEvent.KEYCODE_DPAD_DOWN && e.action == KeyEvent.ACTION_DOWN) { focusPage(); true } else false }
         }
         findViewById<View>(R.id.rail_search).setOnClickListener { startActivity(Intent(this, SearchActivity::class.java)) }
-        findViewById<View>(R.id.rail_fav).setOnClickListener { startActivity(Intent(this, SearchActivity::class.java).putExtra("fav", true)) }
+        findViewById<View>(R.id.rail_fav).setOnClickListener { startActivity(Intent(this, FavoritesActivity::class.java)) }
         findViewById<View>(R.id.nav_settings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         for (id in listOf(R.id.rail_search, R.id.rail_fav, R.id.nav_settings)) findViewById<View>(id).setOnKeyListener { _, k, e ->
             if (k == KeyEvent.KEYCODE_DPAD_RIGHT && e.action == KeyEvent.ACTION_DOWN) { focusPage(); true } else false

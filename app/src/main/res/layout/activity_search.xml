@@ -4,43 +4,78 @@
     android:layout_height="match_parent"
     android:background="@color/bg"
     android:orientation="vertical"
+    android:paddingLeft="@dimen/safe_h"
+    android:paddingRight="@dimen/safe_h"
     android:paddingTop="@dimen/safe_v">
 
     <EditText
         android:id="@+id/query"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="@dimen/safe_h"
-        android:layout_marginRight="@dimen/safe_h"
-        android:background="@drawable/row_bg"
-        android:hint="Search channels, movies and series"
+        android:background="@drawable/search_bg"
+        android:drawableLeft="@drawable/ic_search"
+        android:drawablePadding="12dp"
+        android:drawableTint="@color/text_dim"
+        android:hint="Search movies, TV shows and channels"
         android:imeOptions="actionSearch"
         android:inputType="text"
         android:maxLines="1"
-        android:nextFocusDown="@+id/results"
-        android:padding="12dp"
+        android:paddingBottom="10dp"
+        android:paddingLeft="18dp"
+        android:paddingRight="18dp"
+        android:paddingTop="10dp"
         android:singleLine="true"
         android:textColor="@color/text"
         android:textColorHint="@color/text_dim"
         android:textSize="@dimen/type_title" />
 
-    <TextView
-        android:id="@+id/count"
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:id="@+id/chips"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="8dp"
-        android:paddingLeft="@dimen/safe_h"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+        <TextView android:id="@+id/chip_all" style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="6dp" android:text="All" />
+        <TextView android:id="@+id/chip_movies" style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="6dp" android:text="Movies" />
+        <TextView android:id="@+id/chip_shows" style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="6dp" android:text="TV shows" />
+        <TextView android:id="@+id/chip_live" style="@style/Tab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Live" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/recent_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:fontFamily="@string/font_medium"
+        android:text="Recent searches"
         android:textColor="@color/text_dim"
         android:textSize="@dimen/type_caption" />
 
+    <HorizontalScrollView
+        android:id="@+id/recent_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:scrollbars="none">
+        <LinearLayout android:id="@+id/recent_box" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" />
+    </HorizontalScrollView>
+
+    <TextView
+        android:id="@+id/empty_msg"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:textColor="@color/text_dim"
+        android:textSize="@dimen/type_body"
+        android:visibility="gone" />
+
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/results"
+        android:id="@+id/rows"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_marginLeft="-24dp"
+        android:layout_marginTop="6dp"
         android:layout_weight="1"
-        android:clipChildren="false"
-        android:clipToPadding="false"
-        android:paddingLeft="@dimen/safe_h"
-        android:paddingRight="@dimen/safe_h"
-        android:paddingTop="10dp" />
+        android:clipChildren="true"
+        android:clipToPadding="true" />
 </LinearLayout>

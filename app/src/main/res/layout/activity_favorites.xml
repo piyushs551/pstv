@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:orientation="vertical"
+    android:paddingLeft="@dimen/safe_h"
+    android:paddingRight="@dimen/safe_h"
+    android:paddingTop="@dimen/safe_v">
+
+    <TextView android:id="@+id/fav_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@string/font_strong" android:text="Favorites" android:textColor="@color/text" android:textSize="@dimen/type_headline" />
+    <TextView android:id="@+id/fav_msg" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Press and hold OK on a card to add or remove a favorite." android:textColor="@color/text_dim" android:textSize="@dimen/type_caption" />
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/fav_grid"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        android:layout_weight="1"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/safe_v"
+        android:paddingTop="10dp" />
+</LinearLayout>
