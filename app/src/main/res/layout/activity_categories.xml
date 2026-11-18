@@ -9,7 +9,7 @@
     android:paddingTop="@dimen/safe_v">
 
     <TextView android:id="@+id/cat_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:fontFamily="@string/font_strong" android:textColor="@color/text" android:textSize="@dimen/type_headline" />
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp" android:layout_marginTop="2dp" android:text="Press OK on a category to move or hide it. Moved categories appear first. Changes show next time the tab opens." android:textColor="@color/text_dim" android:textSize="@dimen/type_caption" />
+    <TextView android:id="@+id/cat_hint" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10dp" android:layout_marginTop="2dp" android:text="Press OK to pick a category up, then Up/Down to move it, OK to drop. Hold OK for more (top, bottom, hide)." android:textColor="@color/text_dim" android:textSize="@dimen/type_caption" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/cat_list"

@@ -17,6 +17,8 @@ class CategoriesActivity : BaseActivity() {
     private var groups: MutableList<Group> = ArrayList()
     private val hidden = HashSet<String>()
     private lateinit var list: RecyclerView
+    private var holding = -1
+    private val hintIdle = "Press OK to pick a category up, then Up/Down to move it, OK to drop. Hold OK for more (top, bottom, hide)."
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
@@ -40,9 +42,21 @@ class CategoriesActivity : BaseActivity() {
         val t = to.coerceIn(0, groups.size - 1)
         if (t == from) return
         groups.add(t, groups.removeAt(from)); persist()
-        list.adapter?.notifyDataSetChanged()
+        if (holding == from) holding = t
+        list.adapter?.notifyItemMoved(from, t)
+        list.adapter?.notifyItemChanged(t); list.adapter?.notifyItemChanged(from)
         refocus(t)
     }
+
+    private fun setHolding(p: Int) {
+        val old = holding; holding = p
+        findViewById<TextView>(R.id.cat_hint).text = if (p >= 0) "Moving “${groups[p].name}”: Up/Down to move, OK to drop." else hintIdle
+        if (old >= 0) list.adapter?.notifyItemChanged(old)
+        if (p >= 0) list.adapter?.notifyItemChanged(p)
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() { if (holding >= 0) setHolding(-1) else super.onBackPressed() }
 
     private fun refocus(pos: Int, tries: Int = 0) {
         val lm = list.layoutManager as LinearLayoutManager
@@ -87,9 +101,20 @@ class CategoriesActivity : BaseActivity() {
         override fun onBindViewHolder(h: RecyclerView.ViewHolder, i: Int) {
             val g = groups[i]; val tv = h.itemView as TextView
             val hid = g.name in hidden
-            tv.text = "${i + 1}.  ${g.name}    ·  ${g.count}" + if (hid) "    (hidden)" else ""
+            tv.text = (if (i == holding) "↕   " else "") + "${i + 1}.  ${g.name}    ·  ${g.count}" + if (hid) "    (hidden)" else ""
             tv.alpha = if (hid) 0.5f else 1f
-            tv.setOnClickListener { val p = h.bindingAdapterPosition; if (p >= 0) options(p) }
+            tv.setOnClickListener { val p = h.bindingAdapterPosition; if (p >= 0) setHolding(if (holding == p) -1 else p) }
+            tv.setOnLongClickListener { val p = h.bindingAdapterPosition; if (p >= 0) { if (holding >= 0) setHolding(-1); options(p) }; true }
+            tv.setOnKeyListener { _, k, e ->
+                val p = h.bindingAdapterPosition
+                if (e.action != android.view.KeyEvent.ACTION_DOWN || p < 0 || holding != p) false
+                else when (k) {
+                    android.view.KeyEvent.KEYCODE_DPAD_UP -> { move(p, p - 1); true }
+                    android.view.KeyEvent.KEYCODE_DPAD_DOWN -> { move(p, p + 1); true }
+                    android.view.KeyEvent.KEYCODE_DPAD_LEFT, android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> true
+                    else -> false
+                }
+            }
         }
     }
 }

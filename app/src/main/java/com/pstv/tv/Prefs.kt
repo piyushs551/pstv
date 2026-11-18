@@ -52,9 +52,16 @@ object Prefs {
     // ---- appearance / behaviour (all editable in Settings) ----
     /** 0 Off, 1 Fast, 2 Normal */
     /** Whole-UI size in percent (density scale). Compact by default: shows more per screen. */
-    var uiScale: Int get() = i("uiscale", 85); set(v) = put("uiscale", v)
+    var uiScale: Int get() = i("uiscale", 75); set(v) = put("uiscale", v)
     /** What the home banner does when an item only has a poster (no wide backdrop): "fill" (cropped to the banner) or "right". */
     var heroPoster: String get() = s("heroposter", "fill"); set(v) = put("heroposter", v)
+    /** Banner height: 0 small, 1 medium, 2 large (share of the screen height). */
+    var heroSize: Int get() = i("herosize", 1); set(v) = put("herosize", v)
+    /** Order of items inside Movies / TV show categories: new, playlist, az, year. */
+    var itemSort: String get() = s("itemsort", "new"); set(v) = put("itemsort", v)
+    /** Smart default category order (priority words first, then newest year first). */
+    var catSmart: Boolean get() = i("catsmart", 1) == 1; set(v) = put("catsmart", if (v) 1 else 0)
+    var catPriority: String get() = s("catprio", "hindi,india,bollywood,punjabi,tamil,telugu,malayalam,gujarati,marathi,bengali,kannada"); set(v) = put("catprio", v.trim())
     var anim: Int get() = i("anim", 2); set(v) = put("anim", v)
     var hero: Boolean get() = i("hero", 1) == 1; set(v) = put("hero", if (v) 1 else 0)
     var tabFocusSwitch: Boolean get() = i("tabfocus", 1) == 1; set(v) = put("tabfocus", if (v) 1 else 0)

@@ -109,8 +109,16 @@ object Db {
         "SELECT kind, grp, COUNT(*) FROM items ${if (kind != null) "WHERE kind=${kind.ordinal}" else ""} GROUP BY kind, grp ORDER BY kind, MIN(sort)", null
     ).use { c -> buildList { while (c.moveToNext()) add(Group(kinds[c.getInt(0)], c.getString(1) ?: "", c.getInt(2))) } }
 
-    fun page(kind: Kind, group: String, offset: Int, limit: Int): List<Item> =
-        query("SELECT $COLS FROM items WHERE kind=? AND grp=? ORDER BY sort LIMIT $limit OFFSET $offset", kind.ordinal.toString(), group)
+    /** Items of one category. Movies/series follow Settings > sort (default: newest added first); live keeps channel order. */
+    fun page(kind: Kind, group: String, offset: Int, limit: Int): List<Item> {
+        val order = if (kind == Kind.LIVE) "i.sort" else when (Prefs.itemSort) {
+            "playlist" -> "i.sort"
+            "az" -> "i.norm"
+            "year" -> "(i.year IS NULL), i.year DESC, i.sort DESC"
+            else -> "s.ts DESC, i.sort DESC"
+        }
+        return query("SELECT $I_COLS FROM items i LEFT JOIN seen s ON s.url=i.url WHERE i.kind=? AND i.grp=? ORDER BY $order LIMIT $limit OFFSET $offset", kind.ordinal.toString(), group)
+    }
 
     fun latest(kind: Kind, offset: Int, limit: Int): List<Item> =
         query("SELECT $I_COLS FROM items i LEFT JOIN seen s ON s.url=i.url WHERE i.kind=? ORDER BY s.ts DESC, i.sort DESC LIMIT $limit OFFSET $offset", kind.ordinal.toString())

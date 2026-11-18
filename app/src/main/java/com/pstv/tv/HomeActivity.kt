@@ -41,6 +41,7 @@ class HomeActivity : BaseActivity(), CardHost {
     private var buildToken = 0
     private var chromeShown = true
     private var appliedScale = 0
+    private var appliedHero = 0
     private var curRow = 0
     private var appliedKey = ""
     private lateinit var drawer: RecyclerView
@@ -53,7 +54,8 @@ class HomeActivity : BaseActivity(), CardHost {
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         setContentView(R.layout.activity_home)
-        appliedScale = Prefs.uiScale; appliedKey = Prefs.tmdbKey
+        appliedScale = Prefs.uiScale; appliedKey = Prefs.tmdbKey; appliedHero = Prefs.heroSize
+        findViewById<View>(R.id.hero_area).layoutParams.height = heroHeight(this)
         drawer = findViewById(R.id.drawer); drawer.layoutManager = LinearLayoutManager(this)
         tabs = findViewById(R.id.tabs); status = findViewById(R.id.status)
         rowsPage = findViewById(R.id.page_rows); livePageView = findViewById(R.id.page_live); epgPageView = findViewById(R.id.page_epg)
@@ -90,7 +92,7 @@ class HomeActivity : BaseActivity(), CardHost {
 
     override fun onStart() {
         super.onStart()
-        if (appliedScale != Prefs.uiScale) { recreate(); return }
+        if (appliedScale != Prefs.uiScale || appliedHero != Prefs.heroSize) { recreate(); return }
         if (appliedKey != Prefs.tmdbKey) { appliedKey = Prefs.tmdbKey; showTab(tab, false); return }   // TMDB key added/changed in Settings
         repoListener()
         if (tab == 1) refreshPersonalRows()
@@ -100,7 +102,7 @@ class HomeActivity : BaseActivity(), CardHost {
 
     private fun openDrawer() {
         if (rows.isEmpty()) return
-        val titles = rows.map { it.title }
+        val titles = listOf("") + rows.map { it.title }       // entry 0 = sort control
         drawer.adapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             override fun getItemCount() = titles.size
             override fun onCreateViewHolder(p: ViewGroup, t: Int): RecyclerView.ViewHolder {
@@ -115,14 +117,19 @@ class HomeActivity : BaseActivity(), CardHost {
             }
             override fun onBindViewHolder(h: RecyclerView.ViewHolder, i: Int) {
                 val tv = h.itemView as TextView
-                tv.text = titles[i]; tv.isActivated = i == curRow
-                tv.setOnClickListener { closeDrawer(false); focusRow(i) }
+                if (i == 0) {
+                    tv.text = "⇅  Sort: ${Sorts.label(Prefs.itemSort)}"; tv.isActivated = false
+                    tv.setOnClickListener { Prefs.itemSort = Sorts.next(Prefs.itemSort); closeDrawer(false); buildRows(tab, false); toast("Sorted: ${Sorts.label(Prefs.itemSort)}") }
+                } else {
+                    tv.text = titles[i]; tv.isActivated = i - 1 == curRow
+                    tv.setOnClickListener { closeDrawer(false); focusRow(i - 1) }
+                }
                 tv.setOnKeyListener { _, k, e -> if (k == KeyEvent.KEYCODE_DPAD_RIGHT && e.action == KeyEvent.ACTION_DOWN) { closeDrawer(true); true } else false }
             }
         }
         drawer.visibility = View.VISIBLE
-        (drawer.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(curRow, dp(this, 80))
-        drawer.post { (drawer.layoutManager as LinearLayoutManager).findViewByPosition(curRow)?.requestFocus() }
+        (drawer.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(curRow + 1, dp(this, 80))
+        drawer.post { (drawer.layoutManager as LinearLayoutManager).findViewByPosition(curRow + 1)?.requestFocus() }
     }
 
     private fun closeDrawer(refocus: Boolean) { drawer.visibility = View.GONE; if (refocus) focusRow(curRow) }
@@ -368,7 +375,7 @@ class Hero(private val act: HomeActivity) {
         private set
 
     val w = act.resources.displayMetrics.widthPixels
-    val h = dp(act, 236)
+    val h = heroHeight(act)
 
     init {
         act.findViewById<View>(R.id.hero_play).setOnClickListener { act.openCurrent(false) }
@@ -439,3 +446,7 @@ class Hero(private val act: HomeActivity) {
         if (instant || !Prefs.hero) apply.run() else handler.postDelayed(apply, 150)
     }
 }
+
+/** Banner height as a share of the screen: small 32 %, medium 42 %, large 52 % (Settings > Appearance). */
+fun heroHeight(c: android.content.Context): Int =
+    (c.resources.displayMetrics.heightPixels * when (Prefs.heroSize) { 0 -> 0.32f; 2 -> 0.52f; else -> 0.42f }).toInt()

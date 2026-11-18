@@ -140,8 +140,9 @@ class SettingsActivity : BaseActivity() {
     }
 
     private fun pg_appearance() {
+        row("Banner height", { listOf("Small", "Medium", "Large")[Prefs.heroSize] }) { choose("Banner height (share of the screen)", listOf("Small" to 0, "Medium" to 1, "Large" to 2), Prefs.heroSize) { Prefs.heroSize = it } }
         row("UI size", { "${Prefs.uiScale}%  (smaller = more on screen)" }) {
-            choose("UI size", listOf("Compact · 75%" to 75, "Compact · 85% (default)" to 85, "Medium · 100%" to 100, "Large · 115%" to 115), Prefs.uiScale) { Prefs.uiScale = it; recreate() }
+            choose("UI size", listOf("Compact · 75% (default)" to 75, "Compact · 85%" to 85, "Medium · 100%" to 100, "Large · 115%" to 115), Prefs.uiScale) { Prefs.uiScale = it; recreate() }
         }
         row("Animations", { listOf("Off", "Fast", "Normal")[Prefs.anim] }) { choose("Animations (focus zoom and banner fade)", listOf("Off" to 0, "Fast" to 1, "Normal" to 2), Prefs.anim) { Prefs.anim = it } }
         row("Banner when there is no wide art", { if (Prefs.heroPoster == "right") "Poster on the right" else "Fill the banner (cropped)" }) {
@@ -154,6 +155,9 @@ class SettingsActivity : BaseActivity() {
     }
 
     private fun pg_categories() {
+        row("Sort items inside categories", { Sorts.label(Prefs.itemSort) }) { choose("Sort items (Movies and TV shows)", Sorts.all.map { it.second to it.first }, Prefs.itemSort) { Prefs.itemSort = it } }
+        row("Smart default order", { if (Prefs.catSmart) "On: priority words first, then newest year" else "Off: playlist order" }) { Prefs.catSmart = !Prefs.catSmart }
+        row("Priority words", { Prefs.catPriority }) { edit("Words that move a category to the top (comma separated, first = highest)", Prefs.catPriority) { Prefs.catPriority = it } }
         row("Live categories", { "Reorder or hide" }) { startActivity(android.content.Intent(this, CategoriesActivity::class.java).putExtra("kind", Kind.LIVE.ordinal)) }
         row("Movie categories", { "Reorder or hide (for example Indian first)" }) { startActivity(android.content.Intent(this, CategoriesActivity::class.java).putExtra("kind", Kind.MOVIE.ordinal)) }
         row("TV show categories", { "Reorder or hide" }) { startActivity(android.content.Intent(this, CategoriesActivity::class.java).putExtra("kind", Kind.SERIES.ordinal)) }
