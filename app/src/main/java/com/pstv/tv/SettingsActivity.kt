@@ -137,17 +137,13 @@ class SettingsActivity : BaseActivity() {
         row("Clear image cache", { "Frees ${Images.diskBytes() / 1_048_576} MB" }) { Images.clear(); toast("Image cache cleared") }
 
         section("PLAYER · LIVE")
-        row("Player engine", { engName(Prefs.engineLive) }) { choose("Live player engine", engines, Prefs.engineLive) { Prefs.engineLive = it } }
         row("Low latency", { if (Prefs.lowLatency) "On (smaller buffer, faster start, less tolerance for a weak connection)" else "Off" }) { Prefs.lowLatency = !Prefs.lowLatency }
 
         section("PLAYER · VOD (movies and series)")
-        row("Player engine", { engName(Prefs.engineVod) }) { choose("VOD player engine", engines, Prefs.engineVod) { Prefs.engineVod = it } }
         row("Fast-forward step", { "${Prefs.ffStep} seconds" }) { choose("Fast-forward step", listOf(5, 10, 30, 60).map { "$it seconds" to it }, Prefs.ffStep) { Prefs.ffStep = it } }
         row("Rewind step", { "${Prefs.rwStep} seconds" }) { choose("Rewind step", listOf(5, 10, 30, 60).map { "$it seconds" to it }, Prefs.rwStep) { Prefs.rwStep = it } }
 
         section("PLAYER · BOTH")
-        row("MPV engine status", { if (Prefs.mpvBroken) "Switched off: the app crashed while MPV was running. Tap to re-enable and try again" else "Available" }) { Prefs.mpvBroken = false; Prefs.mpvPending = false }
-        row("Auto fallback", { if (Prefs.autoFallback) "On: if a stream errors or shows nothing for 15 s, retry it with the other engine" else "Off" }) { Prefs.autoFallback = !Prefs.autoFallback }
         row("Match framerate", { if (Prefs.matchFps) "On (asks the TV for a matching refresh rate if it offers one)" else "Off" }) { Prefs.matchFps = !Prefs.matchFps }
         section("SUBTITLES")
         row("OpenSubtitles API key", { keyLabel(Prefs.osKeyUser, BuildConfig.OS_KEY) }) { edit("OpenSubtitles API key. Leave empty to use the built-in key", Prefs.osKeyUser, password = true) { Prefs.osKeyUser = it } }
@@ -188,9 +184,6 @@ class SettingsActivity : BaseActivity() {
                 }.show()
         }.show()
     }
-
-    private val engines = listOf("ExoPlayer (lightweight, default)" to "exo", "MPV (plays more formats and audio tracks)" to "mpv")
-    private fun engName(k: String) = engines.first { it.second == k }.first
 
     companion object {
         val colors = listOf("White" to 0xFFFFFFFF.toInt(), "Yellow" to 0xFFFFE94D.toInt(), "Cyan" to 0xFF5CE1FF.toInt(), "Green" to 0xFF7DFF8A.toInt())

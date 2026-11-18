@@ -27,14 +27,13 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.PlayerView
 import androidx.media3.ui.SubtitleView
-import dev.jdtech.mpv.MPVLib
 import java.io.File
 import java.util.Locale
 
 data class Track(val label: String, val selected: Boolean, val supported: Boolean = true, val ref: Any? = null)
 data class StreamInfo(val height: Int = 0, val fps: Float = 0f, val codec: String? = null, val channels: Int = 0)
 
-/** A playback backend. PlayerActivity only talks to this, so ExoPlayer and mpv are interchangeable. */
+/** A playback backend. PlayerActivity only talks to this, so a different backend can be added later. */
 interface Engine {
     interface Listener {
         fun onBuffering(buffering: Boolean)
@@ -84,9 +83,10 @@ class ExoEngine(private val act: Activity, private val pv: PlayerView, private v
     private var extFile: File? = null
 
     init {
-        val factory = DefaultRenderersFactory(act)
-            .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF)
-            .setEnableDecoderFallback(true)             // hardware first, fall back only if a codec fails
+        // Hardware decoders first; FFmpeg (NextLib) only for what the hardware cannot decode, e.g. MPEG-L2 (MP2) live audio.
+        val factory = io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory(act)
+            .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
+            .setEnableDecoderFallback(true)
         val http = OkHttpDataSource.Factory(Http.client).setUserAgent(Http.UA)
         val lowLatency = live && Prefs.lowLatency
         val load = DefaultLoadControl.Builder()
@@ -223,170 +223,5 @@ class ExoEngine(private val act: Activity, private val pv: PlayerView, private v
             f.sampleMimeType?.substringAfterLast('/')?.let { add(it.uppercase()) }
         }.distinct().joinToString(" · ")
         return listOfNotNull("Track ${n + 1}" + (lang?.let { " [$it]" } ?: ""), extra.ifEmpty { null }).joinToString("  —  ")
-    }
-}
-
-// ====================================================================================================
-// mpv (libmpv + FFmpeg). Loaded only when this engine is actually used, so it costs no RAM otherwise.
-// ====================================================================================================
-
-class MpvEngine(private val ctx: Context, private val root: FrameLayout, private val pv: PlayerView, private val live: Boolean) : Engine {
-    override val name = "MPV"
-    override var listener: Engine.Listener? = null
-    private val main = Handler(Looper.getMainLooper())
-    private val guard = run { Prefs.mpvPending = true }     // cleared on first picture / clean release (see PlayerActivity, release())
-    private val mpv: MPVLib = MPVLib.create(ctx) ?: throw IllegalStateException("libmpv failed to create")
-    private val surface = SurfaceView(ctx)
-    private var surfaceReady = false
-    private var pending: Pair<String, Long>? = null
-    private var released = false
-    private var aspectMode = 0
-
-    private val observer = object : MPVLib.EventObserver {
-        override fun event(eventId: Int) {
-            if (released) return
-            when (eventId) {
-                MPVLib.MpvEvent.MPV_EVENT_FILE_LOADED, MPVLib.MpvEvent.MPV_EVENT_PLAYBACK_RESTART -> main.post { if (!released) { clearStart(); listener?.onReady() } }
-            }
-        }
-        override fun eventEndFile(reason: Int, error: Int) {
-            if (released) return
-            when (reason) {
-                MPVLib.MpvEndFileReason.MPV_END_FILE_REASON_EOF -> main.post { listener?.onEnded() }
-                MPVLib.MpvEndFileReason.MPV_END_FILE_REASON_ERROR -> main.post { listener?.onError("mpv error $error") }
-            }
-        }
-        override fun eventProperty(property: String, value: Boolean) {
-            if (released) return
-            when (property) {
-                "paused-for-cache" -> main.post { listener?.onBuffering(value) }
-                "pause" -> main.post { listener?.onPlayState(!value) }
-            }
-        }
-    }
-
-    init {
-        fun o(k: String, v: String) { mpv.setOptionString(k, v) }
-        o("vo", "gpu"); o("gpu-context", "android"); o("opengl-es", "yes")
-        o("hwdec", "mediacodec,mediacodec-copy"); o("hwdec-codecs", "h264,hevc,mpeg4,mpeg2video,vp8,vp9,av1")
-        o("ao", "audiotrack,opensles")
-        o("user-agent", Http.UA); o("tls-verify", "no")
-        o("cache", "yes")
-        o("demuxer-max-bytes", "${Prefs.bufferMb}MiB"); o("demuxer-max-back-bytes", "8MiB")
-        o("demuxer-readahead-secs", if (live && Prefs.lowLatency) "3" else "20")
-        o("keep-open", "no"); o("force-window", "no"); o("save-position-on-quit", "no")
-        mpv.init()
-        mpv.observeProperty("paused-for-cache", MPVLib.MpvFormat.MPV_FORMAT_FLAG)
-        mpv.observeProperty("pause", MPVLib.MpvFormat.MPV_FORMAT_FLAG)
-        mpv.addObserver(observer)
-
-        pv.visibility = View.GONE
-        root.addView(surface, 0, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-        surface.holder.addCallback(object : SurfaceHolder.Callback {
-            override fun surfaceCreated(h: SurfaceHolder) {
-                if (released) return
-                mpv.attachSurface(h.surface)
-                mpv.setOptionString("force-window", "yes")
-                surfaceReady = true
-                pending?.let { (u, s) -> pending = null; load(u, s) }
-            }
-            override fun surfaceChanged(h: SurfaceHolder, f: Int, w: Int, ht: Int) {}
-            override fun surfaceDestroyed(h: SurfaceHolder) {
-                if (released) return
-                surfaceReady = false
-                mpv.setPropertyString("vo", "null"); mpv.setOptionString("force-window", "no"); mpv.detachSurface()
-            }
-        })
-        applySubtitleStyle()
-    }
-
-    private fun clearStart() { runCatching { mpv.setPropertyString("start", "none") } }
-
-    private fun load(url: String, startMs: Long) {
-        mpv.setPropertyString("start", if (startMs > 5000) "%.3f".format(Locale.US, startMs / 1000.0) else "none")
-        mpv.command(arrayOf("loadfile", url))
-        mpv.setPropertyBoolean("pause", false)
-        setAspect(aspectMode)
-    }
-
-    override fun prepare(url: String, startMs: Long) { if (surfaceReady) load(url, startMs) else pending = url to startMs }
-
-    override var playWhenReady: Boolean
-        get() = mpv.getPropertyBoolean("pause") != true
-        set(v) { mpv.setPropertyBoolean("pause", !v) }
-    override val position get() = ((mpv.getPropertyDouble("time-pos") ?: 0.0) * 1000).toLong()
-    override val duration get() = ((mpv.getPropertyDouble("duration") ?: 0.0) * 1000).toLong()
-    override val seekable get() = mpv.getPropertyBoolean("seekable") == true
-
-    override fun seekTo(ms: Long) { mpv.command(arrayOf("seek", "%.3f".format(Locale.US, ms / 1000.0), "absolute")) }
-
-    override fun tracks(audio: Boolean): List<Track> {
-        val want = if (audio) "audio" else "sub"
-        val n = mpv.getPropertyInt("track-list/count") ?: 0
-        val out = ArrayList<Track>()
-        for (i in 0 until n) {
-            if (mpv.getPropertyString("track-list/$i/type") != want) continue
-            val id = mpv.getPropertyInt("track-list/$i/id") ?: continue
-            val lang = mpv.getPropertyString("track-list/$i/lang")?.takeIf { it != "und" }?.let { Locale(it).displayLanguage }
-            val title = mpv.getPropertyString("track-list/$i/title")
-            val codec = mpv.getPropertyString("track-list/$i/codec")?.uppercase()
-            val ch = mpv.getPropertyInt("track-list/$i/demux-channel-count")
-            val extra = listOfNotNull(title, if (audio) ch?.let { c -> if (c == 6) "5.1" else if (c == 8) "7.1" else "${c}ch" } else null, codec).distinct().joinToString(" · ")
-            out += Track(listOfNotNull("Track $id" + (lang?.let { " [$it]" } ?: ""), extra.ifEmpty { null }).joinToString("  —  "),
-                mpv.getPropertyBoolean("track-list/$i/selected") == true, true, id)
-        }
-        return out
-    }
-
-    override fun select(audio: Boolean, t: Track) { mpv.setPropertyString(if (audio) "aid" else "sid", (t.ref as Int).toString()) }
-    override fun disableText() { mpv.setPropertyString("sid", "no") }
-    override fun textDisabled() = mpv.getPropertyString("sid") == "no"
-
-    override fun info(): StreamInfo = StreamInfo(
-        mpv.getPropertyInt("video-params/h") ?: 0,
-        (mpv.getPropertyDouble("container-fps") ?: 0.0).toFloat(),
-        mpv.getPropertyString("video-codec")?.let { c -> when { c.contains("hevc", true) || c.contains("h265", true) -> "HEVC"; c.contains("h264", true) -> "H.264"; c.contains("av1", true) -> "AV1"; else -> null } },
-        mpv.getPropertyInt("audio-params/channel-count") ?: 0,
-    )
-
-    override fun applySubtitleStyle() {
-        runCatching {
-            mpv.setPropertyDouble("sub-scale", Prefs.subSize / 100.0)
-            mpv.setPropertyString("sub-color", "#%06X".format(Prefs.subColor and 0xFFFFFF))
-            mpv.setPropertyDouble("sub-delay", Prefs.subDelayMs / 1000.0)
-        }
-    }
-
-    override fun setAspect(mode: Int) {
-        aspectMode = mode
-        runCatching {
-            mpv.setPropertyBoolean("keepaspect", mode != 1)
-            mpv.setPropertyDouble("panscan", if (mode == 2) 1.0 else 0.0)
-            mpv.setPropertyString("video-aspect-override", when (mode) { 3 -> "1.777778"; 4 -> "1.333333"; else -> "-1" })
-        }
-    }
-
-    override val delayAppliesToEmbedded = true
-
-    override fun addExternalSub(raw: String, delayMs: Int) {
-        val f = File(ctx.cacheDir, "ext_${System.nanoTime()}.srt")
-        f.writeText(raw)
-        mpv.command(arrayOf("sub-add", f.absolutePath, "select"))
-        setSubDelay(delayMs)
-    }
-
-    override fun setSubDelay(ms: Int) { mpv.setPropertyDouble("sub-delay", ms / 1000.0) }
-
-    override fun release() {
-        if (released) return
-        released = true
-        Prefs.mpvPending = false
-        main.removeCallbacksAndMessages(null)
-        runCatching { mpv.removeObserver(observer) }
-        runCatching { mpv.setPropertyString("vo", "null") }
-        runCatching { mpv.detachSurface() }
-        runCatching { mpv.destroy() }
-        root.removeView(surface)
-        pv.visibility = View.VISIBLE
     }
 }

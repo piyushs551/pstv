@@ -15,7 +15,6 @@ class App : Application() {
         super.onCreate()
         Fonts.install(this)
         Prefs.init(this)
-        if (Prefs.mpvPending) { Prefs.mpvBroken = true; Prefs.mpvPending = false }   // process died while MPV was running
         Anim.init(this)
         Db.init(this)
         Images.init(this)

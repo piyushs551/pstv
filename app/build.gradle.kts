@@ -68,13 +68,14 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
-    val media3 = "1.4.1"
+    val media3 = "1.7.1"
     implementation("androidx.media3:media3-exoplayer:$media3")
     implementation("androidx.media3:media3-exoplayer-hls:$media3")
     implementation("androidx.media3:media3-ui:$media3")
     implementation("androidx.media3:media3-datasource-okhttp:$media3")
+    // FFmpeg software audio/video decoders for ExoPlayer (MP2, DTS, etc. that the Fire TV hardware lacks). minSdk 21, small.
+    implementation("io.github.anilbeesetti:nextlib-media3ext:1.7.1-0.9.0")
 
-    implementation("dev.jdtech.mpv:libmpv:1.1.0")   // optional alternate engine (declares minSdk 26; see manifest override)
     implementation("io.coil-kt:coil:2.7.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     // JSON: android.util.JsonReader (streaming, for huge Xtream lists) + org.json (small API replies), both built in.
@@ -84,6 +85,6 @@ dependencies {
     testImplementation("androidx.test:core:1.5.0")
 }
 
-// libmpv 1.1.0 was built against a newer compileSdk and declares minSdk 26; it only uses basic Android APIs
-// (Context, Surface) plus JNI, so skip the AAR-metadata gate. MpvEngine fails safe if it cannot load on Fire OS 6.
+// Media3 1.7.1 and the FFmpeg extension were built against a newer compileSdk (minCompileSdk metadata only);
+// skip the AAR-metadata gate. The extension itself supports minSdk 21.
 tasks.configureEach { if (name.startsWith("check") && name.endsWith("AarMetadata")) enabled = false }

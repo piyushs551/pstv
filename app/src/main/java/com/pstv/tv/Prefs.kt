@@ -35,14 +35,6 @@ object Prefs {
     /** Fast-forward / rewind steps in seconds (default: the old single seek step). */
     var ffStep: Int get() = i("ff", i("seek", 10)); set(v) = put("ff", v)
     var rwStep: Int get() = i("rw", i("seek", 10)); set(v) = put("rw", v)
-    /** "exo" or "mpv", separately for live and VOD. */
-    var engineLive: String get() = s("eng_live", "exo"); set(v) = put("eng_live", v)
-    var engineVod: String get() = s("eng_vod", "exo"); set(v) = put("eng_vod", v)
-    /** Crash guard for the MPV engine: set (synchronously) when MPV starts, cleared on first picture or clean release.
-     *  If it is still set at the next app start, the process died inside MPV, so MPV is switched off. */
-    var mpvPending: Boolean get() = i("mpvpending", 0) == 1; set(v) { sp.edit().putInt("mpvpending", if (v) 1 else 0).commit() }
-    var mpvBroken: Boolean get() = i("mpvbroken", 0) == 1; set(v) = put("mpvbroken", if (v) 1 else 0)
-    var autoFallback: Boolean get() = i("fallback", 1) == 1; set(v) = put("fallback", if (v) 1 else 0)
     var lowLatency: Boolean get() = i("lowlat", 0) == 1; set(v) = put("lowlat", if (v) 1 else 0)
     var matchFps: Boolean get() = i("matchfps", 0) == 1; set(v) = put("matchfps", if (v) 1 else 0)
     var cacheMb: Int get() = i("cachemb", 100); set(v) = put("cachemb", v)

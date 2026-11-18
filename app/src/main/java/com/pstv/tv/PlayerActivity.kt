@@ -52,7 +52,6 @@ class PlayerActivity : BaseActivity() {
     private var resumeMs = 0L
     private var retries = 0
     private var ready = false
-    private var fallbackUsed = false
     private var matched = false
     private var hasExtSub = false
     private var parentUrl: String? = null
@@ -121,7 +120,7 @@ class PlayerActivity : BaseActivity() {
         pSub.visibility = if (pSub.text.isEmpty()) View.GONE else View.VISIBLE
     }
 
-    override fun onStart() { super.onStart(); startEngine(if (isLive) Prefs.engineLive else Prefs.engineVod, resumeMs); ui.post(ticker) }
+    override fun onStart() { super.onStart(); startEngine(resumeMs); ui.post(ticker) }
 
     override fun onStop() {
         ui.removeCallbacksAndMessages(null)
@@ -137,7 +136,6 @@ class PlayerActivity : BaseActivity() {
         override fun onBuffering(buffering: Boolean) { spin.visibility = if (buffering) View.VISIBLE else View.GONE }
         override fun onReady() {
             ready = true; retries = 0; spin.visibility = View.GONE
-            if (engine is MpvEngine) Prefs.mpvPending = false
             ui.removeCallbacks(stallRun)
             checkAudio()
             updateChips()
@@ -148,18 +146,9 @@ class PlayerActivity : BaseActivity() {
         override fun onPlayState(playing: Boolean) { pPlay.text = if (playing) "Pause" else "Play"; pPlay.setCompoundDrawablesWithIntrinsicBounds(if (playing) R.drawable.ic_pause else R.drawable.ic_play, 0, 0, 0) }
     }
 
-    private fun createEngine(kindName: String): Engine {
-        if (kindName == "mpv" && Prefs.mpvBroken) toast("MPV is switched off: the app crashed while it was running. Re-enable it in Settings > Player.")
-        else if (kindName == "mpv") {
-            try { return MpvEngine(this, root, pv, isLive) }
-            catch (t: Throwable) { toast("MPV could not start on this device (${t.javaClass.simpleName}). Using ExoPlayer."); fallbackUsed = true }
-        }
-        return ExoEngine(this, pv, root, isLive)
-    }
-
-    private fun startEngine(kindName: String, pos: Long) {
+    private fun startEngine(pos: Long) {
         if (engine != null) return
-        engine = createEngine(kindName).also { it.listener = listener }
+        engine = ExoEngine(this, pv, root, isLive).also { it.listener = listener }
         start(currentUrl, pos)
     }
 
@@ -180,33 +169,20 @@ class PlayerActivity : BaseActivity() {
         ui.removeCallbacks(audioRun); ui.postDelayed(audioRun, 3_000)
     }
 
-    /** Silent stream (e.g. MPEG-L2/MP2 audio, which the Fire TV decoder lacks): move to the other engine automatically. */
+    /** Audio the device cannot decode even with the FFmpeg decoders: say so once instead of playing silently. */
     private val audioRun = Runnable { checkAudio() }
+    private var audioWarned = false
     private fun checkAudio() {
         val e = engine ?: return
-        if (ready && e.audioUnsupported() && Prefs.autoFallback && !fallbackUsed) switchEngine("audio format not supported by ${e.name} (e.g. MP2)")
+        if (ready && !audioWarned && e.audioUnsupported()) { audioWarned = true; toast("This stream's audio format can't be decoded on this device") }
     }
 
-    /** Nothing playing 15 s after start: try the other engine (once), if allowed in Settings. */
+    /** Nothing playing 15 s after start. */
     private val stallRun = Runnable { if (!ready) handleProblem("no picture after 15 s") }
 
     private fun handleProblem(reason: String) {
-        if (isLive && retries++ < 2 && engine is ExoEngine) { ui.postDelayed({ start(currentUrl, 0) }, 1500); return }
-        if (Prefs.autoFallback && !fallbackUsed) { switchEngine(reason) }
-        else toast("Playback problem: $reason" + if (!fallbackUsed && !Prefs.autoFallback) "  (enable auto fallback in Settings)" else "")
-    }
-
-    /** Move this stream to the other engine at the current position. */
-    private fun switchEngine(reason: String) {
-        val toMpv = engine !is MpvEngine
-        if (toMpv && Prefs.mpvBroken) { toast("MPV is switched off after a crash. Re-enable it in Settings > Player."); return }
-        fallbackUsed = true
-        val pos = if (isLive) 0 else (engine?.position ?: resumeMs)
-        toast("Switching to ${if (toMpv) "MPV" else "ExoPlayer"}: $reason")
-        engine?.let { runCatching { it.release() } }
-        engine = null
-        engine = createEngine(if (toMpv) "mpv" else "exo").also { it.listener = listener }
-        start(currentUrl, pos)
+        if (isLive && retries++ < 2) { ui.postDelayed({ start(currentUrl, 0) }, 1500); return }
+        toast("Playback problem: $reason")
     }
 
     private fun matchFrameRate(fps: Float) {
@@ -353,7 +329,7 @@ class PlayerActivity : BaseActivity() {
     private fun startChannel(c: Item) {
         key = c.url; title = c.name; group = c.group; baseName = c.name
         setTitles(); Db.touchLive(c.url)
-        retries = 0; fallbackUsed = false
+        retries = 0; audioWarned = false
         start(c.url, 0)
     }
 
@@ -422,17 +398,14 @@ class PlayerActivity : BaseActivity() {
         render()
     }
 
-    private fun otherEngineName() = if (engine is MpvEngine) "ExoPlayer" else "MPV"
-
     private fun trackEntries(audio: Boolean): List<Entry> {
         val e = engine ?: return emptyList()
         val out = ArrayList<Entry>()
         if (!audio) out += Entry("Off", e.textDisabled()) { e.disableText() }
         for (t in e.tracks(audio)) {
             out += if (t.supported) Entry(t.label, t.selected) { e.select(audio, t) }
-            else Entry(t.label + "  (not supported here)", false, dim = true) { toast("${e.name} can't decode this track on this device. Use 'Try ${otherEngineName()}' below.") }
+            else Entry(t.label + "  (not supported here)", false, dim = true) { toast("This device can't decode that track") }
         }
-        out += Entry("Try ${otherEngineName()} engine for this stream") { fallbackUsed = false; switchEngine("manual") }
         return out
     }
 

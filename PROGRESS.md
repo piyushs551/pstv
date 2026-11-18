@@ -37,6 +37,9 @@ Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending 
 - Blank logo cards: light backing is chosen from the logo's luminance (Images.isDark).
 - DONE: Settings > Categories (Categories.kt, CategoriesActivity): reorder/hide per tab; applied in Home groupRows and Live sidebar.
 
+## Engine decision (round 3)
+- User reported MPV crashes on the stick and live MP2 audio is silent on ExoPlayer. MPV removed; Media3 upgraded 1.4.1 -> 1.7.1 and NextLib FFmpeg decoders added (software fallback for unsupported audio). UNVERIFIED on device. If a stream is still silent, report the track label from Audio panel.
+
 ## Decisions
 - API keys (TMDB, OpenSubtitles key+login) are baked in at build time from git-ignored keys.properties via scripts\set-keys.ps1; Settings shows "Built in" and can override. Replaces the earlier "user types keys in Settings".
 - Font: Outfit (rounded sans). Icons: Material Symbols Rounded from npm `@material-symbols/svg-400`, converted to vector drawables.
