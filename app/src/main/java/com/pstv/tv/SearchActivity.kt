@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -32,6 +33,9 @@ class SearchActivity : BaseActivity(), CardHost {
     private var filter = 0                                   // 0 All, 1 Movies, 2 TV shows, 3 Live
     private val handler = Handler(Looper.getMainLooper())
     private var job: Job? = null
+    private var themedJob: Job? = null
+    private var localCount = 0
+    private val themeCache = HashMap<String, List<Item>>()
     private var navBusyUntil = 0L
 
     override fun onCreate(b: Bundle?) {
@@ -96,30 +100,76 @@ class SearchActivity : BaseActivity(), CardHost {
         recentScroll.visibility = if (show) View.VISIBLE else View.GONE
     }
 
+    private fun status(msg: String?) { emptyMsg.text = msg ?: ""; emptyMsg.visibility = if (msg.isNullOrEmpty()) View.GONE else View.VISIBLE }
+
     private fun run() {
         showRecent()
         val text = q.text.toString().trim()
-        job?.cancel()
+        job?.cancel(); themedJob?.cancel()
         job = scope.launch {
             val built = withContext(Dispatchers.IO) { if (text.length < 2) suggestions() else results(text) }
-            emptyMsg.visibility = if (built.isEmpty()) View.VISIBLE else View.GONE
-            emptyMsg.text = "No results for “$text”. Try fewer letters, or check the filter above."
             rows = ArrayList(built)
             adapter = RowsAdapter(rows, this@SearchActivity).also { rv.adapter = it }
+            status(if (built.isEmpty() && text.length >= 2) "No results for “$text”. Try fewer letters, or check the filter above." else null)
+            if (text.length >= 2) themed(text)
+        }
+    }
+
+    /** "bollywood comedy", "christmas movies": ask TMDB (live, gently) and keep only what the playlist has. */
+    private fun themed(text: String) {
+        if (!Prefs.smartSearch || !Tmdb.enabled || filter == 3) return
+        val tq = Smart.parse(text) ?: return
+        if (!tq.hasFilters && localCount >= 3) return                 // looks like a plain title search that already has hits
+        val kinds = (if (tq.kinds.isEmpty()) listOf(Kind.MOVIE, Kind.SERIES) else tq.kinds.toList())
+            .filter { filter == 0 || (filter == 1 && it == Kind.MOVIE) || (filter == 2 && it == Kind.SERIES) }
+        themedJob = scope.launch {
+            delay(650)                                                 // wait for a pause in typing before calling TMDB
+            status("Looking for ${tq.label} in your playlist…")
+            val kw = withContext(Dispatchers.IO) { tq.keywords.mapNotNull { runCatching { Tmdb.keywordId(it) }.getOrNull() } }
+            if (!tq.hasFilters && kw.isEmpty()) { status(if (rows.isEmpty()) "No results for “$text”." else null); return@launch }
+            var found = 0
+            for (kind in kinds) {
+                val ck = "$kind|${tq.label}|${kw.joinToString()}"
+                val row = RowDesc("smart_$kind", "${tq.label} · ${if (kind == Kind.MOVIE) "movies" else "series"}  (from TMDB)", tagMode = 2) { _, _ -> emptyList() }
+                row.started = true; row.done = true
+                themeCache[ck]?.let { row.items.addAll(it) }
+                var shown = false
+                fun show() { if (row.items.isNotEmpty()) { if (!shown) { rows.add(minOf(found, rows.size), row); adapter?.notifyItemInserted(rows.indexOf(row)); shown = true } else adapter?.notifyItemChanged(rows.indexOf(row)) } }
+                if (row.items.isNotEmpty()) show()
+                else {
+                    val seen = HashSet<Long>(); var page = 1
+                    while (page <= 8 && row.items.size < 40) {
+                        val res = withContext(Dispatchers.IO) { runCatching { Tmdb.matchTitles(Tmdb.discoverTitles(tq, kind, kw, page), kind, seen) } }
+                        val err = res.exceptionOrNull()
+                        if (err != null) { status(if (err.message?.contains("429") == true) "TMDB is busy right now. Try again in a moment." else "Could not reach TMDB."); return@launch }
+                        row.items.addAll(res.getOrThrow()); show(); page++
+                    }
+                    if (row.items.isNotEmpty()) themeCache[ck] = ArrayList(row.items)
+                }
+                if (row.items.isNotEmpty()) found++
+            }
+            status(if (found == 0 && rows.isEmpty()) "No titles from TMDB's ${tq.label} list are in your playlist." else null)
         }
     }
 
     private fun results(text: String): List<RowDesc> {
         val found = Db.search(text, 300)
+        localCount = found.size
         fun row(key: String, title: String, kind: Kind): RowDesc? {
             val l = found.filter { it.kind == kind }
             return if (l.isEmpty()) null else RowDesc(key, "$title  ·  ${l.size}", tagMode = 2) { o, _ -> if (o == 0) l else emptyList() }
         }
+        // Categories whose name contains every word ("bollywood", "hindi movies", "christmas")
+        val words = Smart.words(text)
+        val cats = if (words.isEmpty()) emptyList() else Db.groups().filter { g ->
+            val n = g.name.lowercase()
+            words.all { n.contains(it) } && (filter == 0 || (filter == 1 && g.kind == Kind.MOVIE) || (filter == 2 && g.kind == Kind.SERIES) || (filter == 3 && g.kind == Kind.LIVE))
+        }.sortedByDescending { it.count }.take(3).map { g -> RowDesc("g:${g.kind}:${g.name}", "Category · ${g.name}") { o, l -> Db.page(g.kind, g.name, o, l) } }
         return listOfNotNull(
             if (filter == 0 || filter == 1) row("m", "Movies", Kind.MOVIE) else null,
             if (filter == 0 || filter == 2) row("s", "TV shows", Kind.SERIES) else null,
             if (filter == 0 || filter == 3) row("l", "Channels", Kind.LIVE) else null,
-        )
+        ) + cats
     }
 
     /** Nothing typed yet: suggestions (TMDB trending if available, plus what was added recently). */

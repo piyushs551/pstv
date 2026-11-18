@@ -92,6 +92,51 @@ object Tmdb {
         return titles.firstOrNull { normTitle(it.name) == want } ?: titles.firstOrNull()
     }
 
+    // ---- themed search ("bollywood comedy", "christmas movies") ---------------------------------
+
+    /** TMDB keyword id for a word, only on an exact name match (so ordinary title searches do not turn into keyword hunts). */
+    fun keywordId(word: String): Int? {
+        val arr = JSONObject(Http.getString("$API/search/keyword?api_key=${key()}&query=${URLEncoder.encode(word, "UTF-8")}")).optJSONArray("results") ?: return null
+        for (i in 0 until arr.length()) {
+            val o = arr.getJSONObject(i); val n = o.optString("name").lowercase()
+            if (n == word || n == word + "s" || n + "s" == word) return o.optInt("id")
+        }
+        return null
+    }
+
+    /** One page (20 titles) of TMDB discover for a themed query. */
+    fun discoverTitles(q: ThemeQuery, kind: Kind, keywordIds: List<Int>, page: Int): List<Title> {
+        val tv = kind == Kind.SERIES
+        val sb = StringBuilder("$API/discover/${if (tv) "tv" else "movie"}?api_key=${key()}&page=$page&include_adult=false")
+        val gids = q.genres.mapNotNull { Smart.genreId(it, tv) }.distinct()
+        if (gids.isNotEmpty()) sb.append("&with_genres=").append(gids.joinToString(","))
+        q.lang?.let { sb.append("&with_original_language=").append(it) }
+        q.country?.let { sb.append("&with_origin_country=").append(it) }
+        if (keywordIds.isNotEmpty()) sb.append("&with_keywords=").append(keywordIds.joinToString("|"))
+        val dateKey = if (tv) "first_air_date" else "primary_release_date"
+        q.yearFrom?.let { sb.append("&$dateKey.gte=$it-01-01") }
+        q.yearTo?.let { sb.append("&$dateKey.lte=$it-12-31") }
+        val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+        when (q.sort) {
+            "date" -> sb.append("&sort_by=$dateKey.desc&$dateKey.lte=$today&vote_count.gte=5")
+            "rating" -> sb.append("&sort_by=vote_average.desc&vote_count.gte=300")
+            else -> sb.append("&sort_by=popularity.desc&vote_count.gte=10")
+        }
+        return parse(JSONObject(Http.getString(sb.toString())).optJSONArray("results"), tv)
+    }
+
+    /** Keep only the TMDB titles that exist in the playlist (also tried by original title). */
+    fun matchTitles(titles: List<Title>, kind: Kind, seen: MutableSet<Long>): List<Item> {
+        val out = ArrayList<Item>()
+        for (t in titles) {
+            val hit = Db.matchTitle(normTitle(t.name), kind, t.year) ?: t.alt?.let { Db.matchTitle(normTitle(it), kind, t.year) } ?: continue
+            if (!seen.add(hit.id)) continue
+            Db.saveMeta(hit, t.year, t.overview, t.backdrop, t.poster, t.rating, t.genres)
+            out += Db.byId(hit.id) ?: hit
+        }
+        return out
+    }
+
     /** For Settings: says plainly whether the key works. */
     fun test(): String {
         if (!enabled) return "No TMDB key set"

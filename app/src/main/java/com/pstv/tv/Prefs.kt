@@ -67,6 +67,8 @@ object Prefs {
     var clock24: Boolean get() = i("clock24", 0) == 1; set(v) = put("clock24", if (v) 1 else 0)
     /** When an episode ends, play the next one automatically. */
     var autoNext: Boolean get() = i("autonext", 1) == 1; set(v) = put("autonext", if (v) 1 else 0)
+    /** Themed searches ("bollywood comedy") ask TMDB live and keep only titles in the playlist. */
+    var smartSearch: Boolean get() = i("smartsearch", 1) == 1; set(v) = put("smartsearch", if (v) 1 else 0)
     var anim: Int get() = i("anim", 2); set(v) = put("anim", v)
     var hero: Boolean get() = i("hero", 1) == 1; set(v) = put("hero", if (v) 1 else 0)
     var tabFocusSwitch: Boolean get() = i("tabfocus", 1) == 1; set(v) = put("tabfocus", if (v) 1 else 0)

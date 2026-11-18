@@ -170,6 +170,7 @@ class SettingsActivity : BaseActivity() {
 
     private fun pg_artwork() {
         row("TMDB API key", { keyLabel(Prefs.tmdbKeyUser, BuildConfig.TMDB_KEY) }) { edit("TMDB API key (v3). Leave empty to use the built-in key", Prefs.tmdbKeyUser, password = true) { Prefs.tmdbKeyUser = it; Prefs.trendingAt = 0 } }
+        row("Smart search", { if (Prefs.smartSearch) "On: \"bollywood comedy\", \"christmas movies\" use TMDB" else "Off: text search only" }) { Prefs.smartSearch = !Prefs.smartSearch }
         row("Test TMDB key", { "Checks that TMDB accepts the key" }) { toast("Checking…"); Repo.scope.launch { val m = Tmdb.test(); runOnUiThread { toast(m) } } }
         row("Image cache size", { "${Prefs.cacheMb} MB   (used ${Images.diskBytes() / 1_048_576} MB)" }) {
             choose("Image cache size", listOf("50 MB" to 50, "100 MB" to 100, "200 MB" to 200, "500 MB" to 500), Prefs.cacheMb) { Prefs.cacheMb = it; Images.rebuild() }
