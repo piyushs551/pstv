@@ -42,6 +42,8 @@ Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending 
 - Settings > Categories: reorder/hide per tab. Search page redesigned (chips, recent searches, grouped results); Favorites is its own screen.
 - Long-press OK on a movie/show = InfoDialog (banner, plot, seasons/episodes, TMDB "More like this" from the playlist, other versions of the same title). Live channels: long-press toggles favorite.
 
+- Launcher icon: vector drawable replaced by PNG mipmaps (Fire TV launcher showed a broken icon); banner regenerated at 320x180 (drawable-xhdpi/banner.png).
+
 ## Engine decision (round 3)
 - User reported MPV crashes on the stick and live MP2 audio is silent on ExoPlayer. MPV removed; Media3 upgraded 1.4.1 -> 1.7.1 and NextLib FFmpeg decoders added (software fallback for unsupported audio). UNVERIFIED on device. If a stream is still silent, report the track label from Audio panel.
 
