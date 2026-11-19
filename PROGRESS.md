@@ -57,6 +57,8 @@ Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending 
 
 - Round 8b: TMDB-to-playlist matching is now fuzzy (Db.matchTitle -> fuzzyMatch via FTS; Model.fuzzyTokens/fuzzyAccept: ignores years, language/quality tags, leading "the", spacing/hyphens; sequels and different years rejected). FuzzyTest. Used by suggestion rows, themed search, recommendations.
 
+- Round 9: Search > recent searches are now reachable with the remote (filter chips Down -> recent chips, OK runs the search, "Clear" chip).
+
 ## Engine decision (round 3)
 - User reported MPV crashes on the stick and live MP2 audio is silent on ExoPlayer. MPV removed; Media3 upgraded 1.4.1 -> 1.7.1 and NextLib FFmpeg decoders added (software fallback for unsupported audio). UNVERIFIED on device. If a stream is still silent, report the track label from Audio panel.
 

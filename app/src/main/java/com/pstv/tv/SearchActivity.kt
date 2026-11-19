@@ -35,6 +35,7 @@ class SearchActivity : BaseActivity(), CardHost {
     private var job: Job? = null
     private var themedJob: Job? = null
     private var localCount = 0
+    private var focusAfter = false          // after tapping a recent search: put focus on the first result row
     private val themeCache = HashMap<String, List<Item>>()
     private var navBusyUntil = 0L
 
@@ -50,7 +51,7 @@ class SearchActivity : BaseActivity(), CardHost {
             c.setOnClickListener { setFilter(i) }
             c.setOnKeyListener { _, k, e ->
                 if (e.action != KeyEvent.ACTION_DOWN) false
-                else when (k) { KeyEvent.KEYCODE_DPAD_UP -> { q.requestFocus(); true }; KeyEvent.KEYCODE_DPAD_DOWN -> { focusRow(0); true }; else -> false }
+                else when (k) { KeyEvent.KEYCODE_DPAD_UP -> { q.requestFocus(); true }; KeyEvent.KEYCODE_DPAD_DOWN -> { if (recentScroll.visibility == View.VISIBLE && recentBox.childCount > 0) recentBox.getChildAt(0).requestFocus() else focusRow(0); true }; else -> false }
             }
         }
         setFilter(0, run = false)
@@ -86,15 +87,29 @@ class SearchActivity : BaseActivity(), CardHost {
         showRecent()
     }
 
+    private val recentKeys = View.OnKeyListener { _, k, e ->
+        if (e.action != KeyEvent.ACTION_DOWN) false
+        else when (k) {
+            KeyEvent.KEYCODE_DPAD_UP -> { chips[filter].requestFocus(); true }
+            KeyEvent.KEYCODE_DPAD_DOWN -> { focusRow(0); true }
+            else -> false
+        }
+    }
+
+    private fun recentChip(label: String, onClick: () -> Unit) = TextView(this).apply {
+        text = label; setBackgroundResource(R.drawable.tab_bg); setTextColor(resources.getColorStateList(R.drawable.tab_text, null)); type(R.dimen.type_caption)
+        typeface = Fonts.medium(); isFocusable = true; setPadding(dp(context, 12), dp(context, 5), dp(context, 12), dp(context, 5))
+        layoutParams = android.widget.LinearLayout.LayoutParams(-2, -2).apply { rightMargin = dp(context, 6) }
+        setOnClickListener { onClick() }
+        setOnKeyListener(recentKeys)
+    }
+
+    /** Recent searches: focusable chips (OK runs that search); the last chip clears the list. */
     private fun showRecent() {
         recentBox.removeAllViews()
         val list = recents()
-        for (s in list) recentBox.addView(TextView(this).apply {
-            text = s; setBackgroundResource(R.drawable.tab_bg); setTextColor(resources.getColorStateList(R.drawable.tab_text, null)); type(R.dimen.type_caption)
-            typeface = Fonts.medium(); isFocusable = true; setPadding(dp(context, 12), dp(context, 5), dp(context, 12), dp(context, 5))
-            layoutParams = android.widget.LinearLayout.LayoutParams(-2, -2).apply { rightMargin = dp(context, 6) }
-            setOnClickListener { q.setText(s); q.setSelection(s.length); run() }
-        })
+        for (s in list) recentBox.addView(recentChip(s) { chips[filter].requestFocus(); focusAfter = true; q.setText(s); q.setSelection(s.length); handler.removeCallbacksAndMessages(null); run() })
+        if (list.isNotEmpty()) recentBox.addView(recentChip("Clear") { Prefs.rawPut("recent_searches", ""); showRecent(); chips[filter].requestFocus() })
         val show = list.isNotEmpty() && q.text.isNullOrBlank()
         recentLabel.visibility = if (show) View.VISIBLE else View.GONE
         recentScroll.visibility = if (show) View.VISIBLE else View.GONE
@@ -110,6 +125,7 @@ class SearchActivity : BaseActivity(), CardHost {
             val built = withContext(Dispatchers.IO) { if (text.length < 2) suggestions() else results(text) }
             rows = ArrayList(built)
             adapter = RowsAdapter(rows, this@SearchActivity).also { rv.adapter = it }
+            if (focusAfter) { focusAfter = false; rv.post { focusRow(0) } }
             status(if (built.isEmpty() && text.length >= 2) "No results for “$text”. Try fewer letters, or check the filter above." else null)
             if (text.length >= 2) themed(text)
         }
