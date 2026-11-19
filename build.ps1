@@ -17,4 +17,6 @@ if (-not $env:JAVA_HOME) { throw "JDK 17 not found. Run scripts\setup.ps1 first.
 if ($LASTEXITCODE -ne 0) { throw "Build failed" }
 
 $apk = Get-Item "app\build\outputs\apk\debug\app-debug.apk"
-"{0}  ({1:N1} MB)" -f $apk.FullName, ($apk.Length / 1MB)
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$z = [System.IO.Compression.ZipFile]::OpenRead($apk.FullName); $real = ($z.Entries | Measure-Object CompressedLength -Sum).Sum; $z.Dispose()
+"{0}  (app contents {1:N1} MB; the file on disk is {2:N1} MB because incremental builds leave unused space)" -f $apk.FullName, ($real / 1MB), ($apk.Length / 1MB)

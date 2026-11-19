@@ -21,6 +21,7 @@ $ErrorActionPreference = "Continue"      # adb writes status text to stderr; do 
 $deadline = (Get-Date).AddSeconds(90); $warned = $false; $tries = 0
 while ($true) {
     $state = ((& adb -s $target get-state 2>&1 | ForEach-Object { "$_" }) -join " ").Trim()
+    if ($state -ne "device") { Write-Host "  waiting for the TV (state: $state)" -ForegroundColor DarkGray }
     if ($state -eq "device") { break }
     if ((Get-Date) -gt $deadline) { throw "Could not reach the TV (state: $state). Wake the TV, check ADB debugging is on and the IP is right, then run again." }
     if ($state -match "unauthorized") {
