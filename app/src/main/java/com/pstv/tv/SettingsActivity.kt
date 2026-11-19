@@ -189,6 +189,12 @@ class SettingsActivity : BaseActivity() {
 
         section("PLAYER · BOTH")
         row("Autoplay next episode", { if (Prefs.autoNext) "On: the next episode starts when one ends" else "Off" }) { Prefs.autoNext = !Prefs.autoNext }
+        row("Hide controls after", { if (Prefs.hideSecs == 0) "Never" else "${Prefs.hideSecs} seconds" }) {
+            choose("Hide the player controls after", listOf("3 seconds" to 3, "5 seconds" to 5, "8 seconds" to 8, "Never" to 0), Prefs.hideSecs) { Prefs.hideSecs = it }
+        }
+        row("Hold-to-seek speed", { listOf("Off (always one step)", "Normal", "Fast")[Prefs.seekAccel] }) {
+            choose("While Left/Right is held, seeking speeds up", listOf("Off (always one step)" to 0, "Normal" to 1, "Fast" to 2), Prefs.seekAccel) { Prefs.seekAccel = it }
+        }
         row("Match framerate", { if (Prefs.matchFps) "On (asks the TV for a matching refresh rate if it offers one)" else "Off" }) { Prefs.matchFps = !Prefs.matchFps }
     }
 

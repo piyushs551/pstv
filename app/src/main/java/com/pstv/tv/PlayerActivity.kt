@@ -31,7 +31,9 @@ class PlayerActivity : BaseActivity() {
     private lateinit var pSub: TextView
     private lateinit var pTitle: TextView
     private lateinit var barWrap: View
-    private lateinit var pBar: ProgressBar
+    private lateinit var pBar: SeekLine
+    private lateinit var pPrev: TextView
+    private lateinit var pNext: TextView
     private lateinit var pTime: TextView
     private lateinit var pPlay: TextView
     private lateinit var banner: TextView
@@ -51,6 +53,7 @@ class PlayerActivity : BaseActivity() {
     private var episode = 0
     private var resumeMs = 0L
     private var retries = 0
+    private var audioApplied = false
     private var ready = false
     private var matched = false
     private var hasExtSub = false
@@ -71,7 +74,7 @@ class PlayerActivity : BaseActivity() {
         setContentView(R.layout.activity_player)
         root = findViewById(R.id.root); pv = findViewById(R.id.player); spin = findViewById(R.id.spin)
         overlay = findViewById(R.id.overlay); chips = findViewById(R.id.p_chips); pSub = findViewById(R.id.p_sub); pTitle = findViewById(R.id.p_title)
-        barWrap = findViewById(R.id.p_bar_wrap); pBar = findViewById(R.id.p_bar); pTime = findViewById(R.id.p_time); pPlay = findViewById(R.id.p_play)
+        barWrap = findViewById(R.id.p_bar_wrap); pBar = barWrap as SeekLine; pTime = findViewById(R.id.p_time); pPlay = findViewById(R.id.p_play); pPrev = findViewById(R.id.p_prev); pNext = findViewById(R.id.p_next)
         banner = findViewById(R.id.p_banner); chanList = findViewById(R.id.chan_list)
         side = findViewById(R.id.side); sideTitle = findViewById(R.id.side_title); sideList = findViewById(R.id.side_list)
         sideList.layoutManager = LinearLayoutManager(this)
@@ -88,7 +91,7 @@ class PlayerActivity : BaseActivity() {
         parentUrl = i.getStringExtra("parent")?.ifEmpty { null }; epLabel = i.getStringExtra("label")?.ifEmpty { null }
         setTitles()
         // Series: fetch the episode list so we know what comes next
-        parentUrl?.let { p -> if (kind == Kind.SERIES) scope.launch { episodeList = withContext(Dispatchers.IO) { runCatching { Xtream.episodes(p) }.getOrDefault(emptyList()) } } }
+        parentUrl?.let { p -> if (kind == Kind.SERIES) scope.launch { episodeList = withContext(Dispatchers.IO) { runCatching { Xtream.episodes(p) }.getOrDefault(emptyList()) }; updateEpisodeButtons() } }
 
         seeker = SeekController({ engine }) { t, d -> showOverlay(preview = t, previewDur = d) }
         root.addOnLayoutChangeListener { _, l, t, r, bt, ol, ot, orr, ob -> if (r - l != orr - ol || bt - t != ob - ot) engine?.setAspect(Prefs.aspect) }
@@ -97,6 +100,7 @@ class PlayerActivity : BaseActivity() {
         findViewById<View>(R.id.p_audio).setOnClickListener { openAudio() }
         findViewById<View>(R.id.p_subs).setOnClickListener { openSubs() }
         findViewById<View>(R.id.p_aspect).setOnClickListener { openAspect() }
+        pPrev.setOnClickListener { goEpisode(-1) }; pNext.setOnClickListener { goEpisode(1) }
         if (isLive) { barWrap.visibility = View.GONE; pPlay.visibility = View.GONE }
 
         if (isLive) {
@@ -140,6 +144,7 @@ class PlayerActivity : BaseActivity() {
         override fun onReady() {
             ready = true; retries = 0; spin.visibility = View.GONE
             ui.removeCallbacks(stallRun)
+            if (!audioApplied) { audioApplied = true; applySavedAudio() }
             checkAudio()
             updateChips()
             engine?.let { e -> matchFrameRate(e.info().fps); e.setAspect(Prefs.aspect); e.applySubtitleStyle() }
@@ -168,7 +173,7 @@ class PlayerActivity : BaseActivity() {
     private fun start(url: String, pos: Long) {
         val e = engine ?: return
         currentUrl = url
-        ready = false; matched = false
+        ready = false; matched = false; audioApplied = false
         spin.visibility = View.VISIBLE
         e.prepare(url, pos)
         e.playWhenReady = true
@@ -217,15 +222,33 @@ class PlayerActivity : BaseActivity() {
         Db.saveProgress(n.url, 0, 0, p, "Next: S${n.season} E${n.number}")
     }
 
-    private fun playNext(n: Xtream.Episode) {
+    private fun playNext(n: Xtream.Episode) = playEpisode(n, 0, "Next episode")
+
+    private fun playEpisode(n: Xtream.Episode, startMs: Long, banner: String) {
         key = n.url; season = n.season; episode = n.number
         title = "${cleanTitle(baseName)}  S${n.season}E${n.number}"
         epLabel = "S${n.season} E${n.number}"
-        resumeMs = 0; retries = 0; audioWarned = false
-        setTitles()
-        showBanner("Next episode: S${n.season} E${n.number}")
-        start(n.url, 0)
+        resumeMs = startMs; retries = 0; audioWarned = false
+        setTitles(); updateEpisodeButtons()
+        showBanner("$banner: S${n.season} E${n.number}")
+        start(n.url, startMs)
     }
+
+    /** Previous (-1) / next (+1) episode from the player controls. Keeps the watched position of the one we leave. */
+    private fun goEpisode(d: Int) {
+        val i = episodeList.indexOfFirst { it.url == key }
+        val t = episodeList.getOrNull(i + d) ?: return
+        saveProgress()
+        playEpisode(t, Db.progressOf(t.url), if (d > 0) "Next episode" else "Previous episode")
+    }
+
+    private fun updateEpisodeButtons() {
+        val i = episodeList.indexOfFirst { it.url == key }
+        val on = kind == Kind.SERIES && parentUrl != null && i >= 0
+        pPrev.visibility = if (on && i > 0) View.VISIBLE else View.GONE
+        pNext.visibility = if (on && i < episodeList.size - 1) View.VISIBLE else View.GONE
+    }
+
 
     private fun saveProgress() {
         val e = engine ?: return
@@ -248,13 +271,14 @@ class PlayerActivity : BaseActivity() {
     private val hideOverlay = Runnable { if (side.visibility != View.VISIBLE) overlay.visibility = View.GONE }
     private val hideBanner = Runnable { banner.visibility = View.GONE }
 
+    private fun resetHide() { ui.removeCallbacks(hideOverlay); if (Prefs.hideSecs > 0) ui.postDelayed(hideOverlay, Prefs.hideSecs * 1000L) }
+
     private fun showOverlay(preview: Long? = null, previewDur: Long = 0, focus: View? = null) {
         overlay.visibility = View.VISIBLE
         updateOverlay(preview, previewDur)
         updateChips()
         focus?.requestFocus()
-        ui.removeCallbacks(hideOverlay)
-        if (engine?.playWhenReady != false) ui.postDelayed(hideOverlay, 5000)
+        resetHide()
     }
 
     private fun updateOverlay(preview: Long?, previewDur: Long) {
@@ -305,11 +329,24 @@ class PlayerActivity : BaseActivity() {
         val f = currentFocus
         val inOverlay = overlay.visibility == View.VISIBLE && f != null && f.isIn(overlay)
         if (inOverlay) {
-            // Focus is on the overlay: the progress bar seeks with Left/Right, buttons move normally.
-            ui.removeCallbacks(hideOverlay); if (p.playWhenReady) ui.postDelayed(hideOverlay, 6000)
-            if (f === barWrap && canSeek) {
-                if (e.keyCode == KeyEvent.KEYCODE_DPAD_LEFT) { seeker.press(-1, e.repeatCount); return true }
-                if (e.keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) { seeker.press(1, e.repeatCount); return true }
+            resetHide()
+            // Arrow keys move between the controls (Previous, Pause, Next, Audio, Subtitles, Aspect) and the progress line.
+            val ctl = listOf<View>(pPrev, pPlay, pNext, findViewById(R.id.p_audio), findViewById(R.id.p_subs), findViewById(R.id.p_aspect)).filter { it.visibility == View.VISIBLE }
+            if (f === barWrap) {
+                when (e.keyCode) {
+                    KeyEvent.KEYCODE_DPAD_LEFT -> { if (canSeek) seeker.press(-1, e.repeatCount); return true }
+                    KeyEvent.KEYCODE_DPAD_RIGHT -> { if (canSeek) seeker.press(1, e.repeatCount); return true }
+                    KeyEvent.KEYCODE_DPAD_DOWN -> { (ctl.firstOrNull { it === pPlay } ?: ctl.firstOrNull())?.requestFocus(); return true }
+                    KeyEvent.KEYCODE_DPAD_UP -> return true
+                }
+            } else {
+                val i = ctl.indexOf(f)
+                if (i >= 0) when (e.keyCode) {
+                    KeyEvent.KEYCODE_DPAD_LEFT -> { ctl.getOrNull(i - 1)?.requestFocus(); return true }
+                    KeyEvent.KEYCODE_DPAD_RIGHT -> { ctl.getOrNull(i + 1)?.requestFocus(); return true }
+                    KeyEvent.KEYCODE_DPAD_UP -> { if (barWrap.visibility == View.VISIBLE) barWrap.requestFocus(); return true }
+                    KeyEvent.KEYCODE_DPAD_DOWN -> return true
+                }
             }
             if (e.keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) { p.playWhenReady = !p.playWhenReady; return true }
             return super.dispatchKeyEvent(e)
@@ -329,6 +366,8 @@ class PlayerActivity : BaseActivity() {
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> { if (e.repeatCount == 0) { p.playWhenReady = !p.playWhenReady; showOverlay() }; return true }
             KeyEvent.KEYCODE_MEDIA_PLAY -> { p.playWhenReady = true; showOverlay(); return true }
             KeyEvent.KEYCODE_MEDIA_PAUSE -> { p.playWhenReady = false; showOverlay(); return true }
+            KeyEvent.KEYCODE_MEDIA_NEXT -> { if (pNext.visibility == View.VISIBLE) goEpisode(1); return true }
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> { if (pPrev.visibility == View.VISIBLE) goEpisode(-1); return true }
             KeyEvent.KEYCODE_MENU -> { showOverlay(focus = findViewById(R.id.p_subs)); return true }
         }
         return super.dispatchKeyEvent(e)
@@ -428,12 +467,31 @@ class PlayerActivity : BaseActivity() {
         render()
     }
 
+    /** Audio language/track is remembered per movie or series while it stays in Continue Watching. */
+    private val titleKey get() = parentUrl ?: key
+
+    private fun rememberAudio(t: Track) {
+        if (isLive) return
+        Db.setAudioPref(titleKey, t.lang, t.index)
+        toast("Audio remembered for this ${if (parentUrl != null) "series" else "movie"}")
+    }
+
+    private fun applySavedAudio() {
+        if (isLive) return
+        val e = engine ?: return
+        val pref = Db.audioPref(titleKey) ?: return
+        val tracks = e.tracks(true).filter { it.supported }
+        if (tracks.size < 2) return
+        val match = tracks.firstOrNull { pref.first != null && it.lang == pref.first } ?: tracks.getOrNull(pref.second)
+        if (match != null && !match.selected) e.select(true, match)
+    }
+
     private fun trackEntries(audio: Boolean): List<Entry> {
         val e = engine ?: return emptyList()
         val out = ArrayList<Entry>()
         if (!audio) out += Entry("Off", e.textDisabled()) { e.disableText() }
         for (t in e.tracks(audio)) {
-            out += if (t.supported) Entry(t.label, t.selected) { e.select(audio, t) }
+            out += if (t.supported) Entry(t.label, t.selected) { e.select(audio, t); if (audio) rememberAudio(t) }
             else Entry(t.label + "  (not supported here)", false, dim = true) { toast("This device can't decode that track") }
         }
         return out

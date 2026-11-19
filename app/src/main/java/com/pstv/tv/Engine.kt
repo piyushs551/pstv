@@ -30,7 +30,7 @@ import androidx.media3.ui.SubtitleView
 import java.io.File
 import java.util.Locale
 
-data class Track(val label: String, val selected: Boolean, val supported: Boolean = true, val ref: Any? = null)
+data class Track(val label: String, val selected: Boolean, val supported: Boolean = true, val ref: Any? = null, val lang: String? = null, val index: Int = 0)
 data class StreamInfo(val height: Int = 0, val fps: Float = 0f, val codec: String? = null, val channels: Int = 0)
 
 /** A playback backend. PlayerActivity only talks to this, so a different backend can be added later. */
@@ -143,7 +143,7 @@ class ExoEngine(private val act: Activity, private val pv: PlayerView, private v
             for (t in 0 until g.length) {
                 val label = label(g.getTrackFormat(t), n++)
                 // Unsupported tracks are listed (greyed) so you can see what the stream has but this device can't decode.
-                out += Track(label, g.isTrackSelected(t) && !off, g.isTrackSupported(t), Pair(g, t))
+                out += Track(label, g.isTrackSelected(t) && !off, g.isTrackSupported(t), Pair(g, t), g.getTrackFormat(t).language?.takeIf { it != "und" }, n - 1)
             }
         }
         return out

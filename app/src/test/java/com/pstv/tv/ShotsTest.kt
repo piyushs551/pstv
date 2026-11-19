@@ -73,7 +73,8 @@ class ShotsTest {
         pl.findViewById<android.widget.TextView>(R.id.p_title).text = "Sample Series 4"
         pl.findViewById<android.widget.TextView>(R.id.p_sub).text = "Season 1 Episode 8"
         pl.findViewById<android.widget.TextView>(R.id.p_time).text = "00:04 / 27:36"
-        pl.findViewById<android.widget.ProgressBar>(R.id.p_bar).progress = 120
+        pl.findViewById<SeekLine>(R.id.p_bar_wrap).progress = 120
+        pl.findViewById<View>(R.id.p_prev).visibility = View.VISIBLE; pl.findViewById<View>(R.id.p_next).visibility = View.VISIBLE
         val chips = pl.findViewById<android.widget.LinearLayout>(R.id.p_chips)
         for (t in listOf("FULL HD", "HEVC", "23.98 Hz", "STEREO")) chips.addView(android.widget.TextView(act).apply { text = t; setBackgroundResource(R.drawable.chip_bg); setTextColor(-1); setPadding(20, 6, 20, 6); type(R.dimen.type_micro) })
         pl.findViewById<View>(R.id.side).visibility = View.VISIBLE

@@ -15,6 +15,12 @@ class SeekController(private val engine: () -> Engine?, private val onPreview: (
     private var lastTick = 0L
     private var hold = 0
 
+    companion object {
+        /** One step while a key is held: the configured step grows with every repeat, up to 15 steps (max 10 min). */
+        fun stepFor(baseMs: Long, hold: Int, accel: Double): Long =
+            minOf((baseMs * (1 + hold * accel)).toLong(), maxOf(baseMs, minOf(baseMs * 15, 600_000L)))
+    }
+
     val pendingTarget: Long? get() = pending
 
     private val commit = Runnable {
@@ -32,11 +38,10 @@ class SeekController(private val engine: () -> Engine?, private val onPreview: (
             step = base
         } else {
             val now = SystemClock.uptimeMillis()
-            if (now - lastTick < 250) return        // held key: at most 4 steps per second
+            if (now - lastTick < 200) return        // held key: at most 5 steps per second
             lastTick = now
             hold++
-            val cap = maxOf(base, minOf(base * 6, 300_000L))
-            step = minOf(base * (1 + hold / 4), cap)  // grows by one base step every ~1 s of holding
+            step = stepFor(base, hold, when (Prefs.seekAccel) { 0 -> 0.0; 1 -> 0.7; else -> 1.4 })
         }
         val dur = p.duration.takeIf { it > 0 }
         val cur = pending ?: p.position

@@ -8,6 +8,7 @@ import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.widget.ImageView
+import android.view.View
 
 /**
  * Card image: rounded corners (clipped in code, so it works on any device) and a top-biased crop, so faces in a
@@ -43,5 +44,29 @@ class CardImageView @JvmOverloads constructor(c: Context, a: AttributeSet? = nul
     override fun onDraw(canvas: Canvas) {
         if (width > 0) { rect.set(0f, 0f, width.toFloat(), height.toFloat()); path.reset(); path.addRoundRect(rect, radius, radius, Path.Direction.CW); canvas.clipPath(path) }
         super.onDraw(canvas)
+    }
+}
+
+/** Player progress: one thin line. When focused it thickens and shows a dot, so it is clear Left/Right will seek. */
+class SeekLine @JvmOverloads constructor(c: Context, a: AttributeSet? = null) : View(c, a) {
+    private val track = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = 0x4DFFFFFF }
+    private val fill = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFFFFF.toInt() }
+    private val rect = android.graphics.RectF()
+    var progress = 0                      // 0..1000
+        set(v) { field = v.coerceIn(0, 1000); invalidate() }
+
+    init { isFocusable = true }
+
+    override fun onFocusChanged(gained: Boolean, d: Int, r: android.graphics.Rect?) { super.onFocusChanged(gained, d, r); invalidate() }
+
+    override fun onDraw(canvas: Canvas) {
+        val d = resources.displayMetrics.density
+        val h = (if (isFocused) 4f else 2f) * d
+        val cy = height / 2f
+        val w = width.toFloat()
+        rect.set(0f, cy - h / 2, w, cy + h / 2); canvas.drawRoundRect(rect, h / 2, h / 2, track)
+        val x = w * progress / 1000f
+        rect.set(0f, cy - h / 2, x, cy + h / 2); canvas.drawRoundRect(rect, h / 2, h / 2, fill)
+        if (isFocused) canvas.drawCircle(x.coerceIn(5f * d, w - 5f * d), cy, 6f * d, fill)
     }
 }

@@ -33,8 +33,8 @@ object Prefs {
     /** Seek step in seconds: 5, 10, 30 or 60. */
     var seekStep: Int get() = i("seek", 10); set(v) = put("seek", v)
     /** Fast-forward / rewind steps in seconds (default: the old single seek step). */
-    var ffStep: Int get() = i("ff", i("seek", 10)); set(v) = put("ff", v)
-    var rwStep: Int get() = i("rw", i("seek", 10)); set(v) = put("rw", v)
+    var ffStep: Int get() = i("ff", i("seek", 5)); set(v) = put("ff", v)
+    var rwStep: Int get() = i("rw", i("seek", 5)); set(v) = put("rw", v)
     var lowLatency: Boolean get() = i("lowlat", 0) == 1; set(v) = put("lowlat", if (v) 1 else 0)
     var matchFps: Boolean get() = i("matchfps", 0) == 1; set(v) = put("matchfps", if (v) 1 else 0)
     var cacheMb: Int get() = i("cachemb", 100); set(v) = put("cachemb", v)
@@ -69,6 +69,10 @@ object Prefs {
     var autoNext: Boolean get() = i("autonext", 1) == 1; set(v) = put("autonext", if (v) 1 else 0)
     /** Themed searches ("bollywood comedy") ask TMDB live and keep only titles in the playlist. */
     var smartSearch: Boolean get() = i("smartsearch", 1) == 1; set(v) = put("smartsearch", if (v) 1 else 0)
+    /** Seconds before the player controls hide again (0 = never). */
+    var hideSecs: Int get() = i("hidesecs", 5); set(v) = put("hidesecs", v)
+    /** How quickly seeking speeds up while Left/Right is held: 0 off, 1 normal, 2 fast. */
+    var seekAccel: Int get() = i("seekaccel", 1); set(v) = put("seekaccel", v)
     var anim: Int get() = i("anim", 2); set(v) = put("anim", v)
     var hero: Boolean get() = i("hero", 1) == 1; set(v) = put("hero", if (v) 1 else 0)
     var tabFocusSwitch: Boolean get() = i("tabfocus", 1) == 1; set(v) = put("tabfocus", if (v) 1 else 0)

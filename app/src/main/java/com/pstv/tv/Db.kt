@@ -20,7 +20,7 @@ object Db {
     private val rd get() = helper.readableDatabase
     private val wr get() = helper.writableDatabase
 
-    private class H(c: Context) : SQLiteOpenHelper(c, "pstv.db", null, 3) {
+    private class H(c: Context) : SQLiteOpenHelper(c, "pstv.db", null, 4) {
         override fun onConfigure(db: SQLiteDatabase) { db.setForeignKeyConstraintsEnabled(false); db.enableWriteAheadLogging() }
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL("""CREATE TABLE items(id INTEGER PRIMARY KEY, kind INTEGER, grp TEXT, name TEXT, norm TEXT, logo TEXT, url TEXT, year INTEGER, overview TEXT, backdrop TEXT, poster TEXT, tvg TEXT, rating REAL, genres TEXT, sort INTEGER)""")
@@ -33,17 +33,19 @@ object Db {
             db.execSQL("CREATE TABLE recents(url TEXT PRIMARY KEY, pos INTEGER, dur INTEGER, ts INTEGER, parent TEXT, label TEXT)")
             db.execSQL("CREATE TABLE livehist(url TEXT PRIMARY KEY, ts INTEGER)")
             db.execSQL("CREATE TABLE seen(url TEXT PRIMARY KEY, ts INTEGER)")
+            db.execSQL("CREATE TABLE audiopref(title TEXT PRIMARY KEY, lang TEXT, idx INTEGER)")
             // TMDB metadata survives playlist refreshes, keyed by normalised title + kind.
             db.execSQL("CREATE TABLE meta(norm TEXT, kind INTEGER, year INTEGER, overview TEXT, backdrop TEXT, poster TEXT, rating REAL, genres TEXT, PRIMARY KEY(norm, kind))")
             db.execSQL("CREATE TABLE epg(ch TEXT, start INTEGER, stop INTEGER, title TEXT)")
             db.execSQL("CREATE INDEX i_epg ON epg(ch, start)")
         }
         override fun onUpgrade(db: SQLiteDatabase, o: Int, n: Int) {
-            if (o >= 2) {   // 2 -> 3: remember the series (parent) and episode label for Continue Watching
-                db.execSQL("ALTER TABLE recents ADD COLUMN parent TEXT"); db.execSQL("ALTER TABLE recents ADD COLUMN label TEXT"); return
+            if (o < 2) {   // pre-release schema: rebuild
+                for (t in listOf("items", "items_fts", "favs", "recents", "livehist", "seen", "meta", "epg", "audiopref")) db.execSQL("DROP TABLE IF EXISTS $t")
+                onCreate(db); return
             }
-            for (t in listOf("items", "items_fts", "favs", "recents", "livehist", "seen", "meta", "epg")) db.execSQL("DROP TABLE IF EXISTS $t")
-            onCreate(db)
+            if (o < 3) { db.execSQL("ALTER TABLE recents ADD COLUMN parent TEXT"); db.execSQL("ALTER TABLE recents ADD COLUMN label TEXT") }   // series link for Continue Watching
+            if (o < 4) db.execSQL("CREATE TABLE IF NOT EXISTS audiopref(title TEXT PRIMARY KEY, lang TEXT, idx INTEGER)")                       // audio chosen per title
         }
     }
 
@@ -200,6 +202,16 @@ object Db {
             "SELECT $I_COLS, r.pos, r.dur, r.label FROM recents r JOIN items i ON i.url=COALESCE(r.parent, r.url) WHERE (r.pos > 10000 OR r.label LIKE 'Next:%') ${if (kind != null) "AND i.kind=${kind.ordinal}" else ""} ORDER BY r.ts DESC LIMIT ${limit * 3}", null
         ).use { c -> buildList { while (c.moveToNext()) { val it = c.item(extra = true); if (seen.add(it.url)) add(it) } } }.take(limit)
     }
+
+    // ---- audio chosen for a title (movie url, or series url) stays until the title leaves Continue Watching ----
+    fun audioPref(title: String): Pair<String?, Int>? =
+        rd.rawQuery("SELECT lang, idx FROM audiopref WHERE title=?", arrayOf(title)).use { if (it.moveToFirst()) it.getString(0) to it.getInt(1) else null }
+
+    fun setAudioPref(title: String, lang: String?, idx: Int) {
+        wr.insertWithOnConflict("audiopref", null, ContentValues().apply { put("title", title); put("lang", lang); put("idx", idx) }, SQLiteDatabase.CONFLICT_REPLACE)
+    }
+
+    fun pruneAudioPrefs() { wr.execSQL("DELETE FROM audiopref WHERE title NOT IN (SELECT COALESCE(parent, url) FROM recents)") }
 
     /** Last watched episode of a series: (episode url, label, position). */
     fun lastEpisode(parent: String): Triple<String, String?, Long>? =

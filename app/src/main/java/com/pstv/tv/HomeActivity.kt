@@ -110,6 +110,7 @@ class HomeActivity : BaseActivity(), CardHost {
     override fun onStart() {
         super.onStart()
         clockHandler.removeCallbacks(clockTick); clockHandler.post(clockTick)
+        Repo.scope.launch { Db.pruneAudioPrefs() }
         if (appliedScale != Prefs.uiScale || appliedHero != Prefs.heroSize) { recreate(); return }
         if (appliedKey != Prefs.tmdbKey) { appliedKey = Prefs.tmdbKey; showTab(tab, false); return }   // TMDB key added/changed in Settings
         repoListener()
