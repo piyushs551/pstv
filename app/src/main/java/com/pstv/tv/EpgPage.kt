@@ -25,6 +25,11 @@ class EpgPage(private val act: HomeActivity, root: View) {
     private val rv: RecyclerView = root.findViewById(R.id.epg_rows)
     private val head: FrameLayout = root.findViewById(R.id.epg_head)
     private val msg: TextView = root.findViewById(R.id.epg_msg)
+    private val catsRv: RecyclerView = act.findViewById(R.id.epg_cats)
+    private var catNames: List<String> = emptyList()   // index 0 = all channels
+    private var group: String? = null                  // null = all channels
+    private var baseStart = 0L
+    val panelOpen get() = catsRv.visibility == View.VISIBLE
 
     private val minuteDp = 4
     private val windowMin = 180
@@ -41,22 +46,76 @@ class EpgPage(private val act: HomeActivity, root: View) {
         rv.itemAnimator = null
         rv.setItemViewCacheSize(4)
         rv.adapter = Adapter()
+        catsRv.layoutManager = LinearLayoutManager(act)
+        catsRv.itemAnimator = null
+        catsRv.adapter = CatAdapter()
+    }
+
+    /** Left at the first block of a row (when the time window is already at its start) opens the category panel. */
+    private fun openPanel() {
+        act.scope.launch {
+            catNames = listOf("All channels") + withContext(Dispatchers.IO) { Categories.apply(Kind.LIVE, Db.groups(Kind.LIVE)).map { it.name } }
+            catsRv.adapter?.notifyDataSetChanged()
+            catsRv.visibility = View.VISIBLE
+            val at = group?.let { catNames.indexOf(it) }?.takeIf { it >= 0 } ?: 0
+            (catsRv.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(at, dp(act, 120))
+            focusCat(at, 0)
+        }
+    }
+
+    private fun focusCat(at: Int, tries: Int) {
+        val vh = catsRv.findViewHolderForAdapterPosition(at)
+        if (vh != null) vh.itemView.requestFocus() else if (tries < 8) catsRv.post { focusCat(at, tries + 1) }
+    }
+
+    fun hidePanel() { catsRv.visibility = View.GONE }
+    fun closePanel() { hidePanel(); focusFirst() }
+
+    private inner class CatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+        override fun getItemCount() = catNames.size
+        override fun onCreateViewHolder(p: ViewGroup, t: Int): RecyclerView.ViewHolder {
+            val tv = TextView(p.context).apply {
+                layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(context, 4) }
+                setPadding(dp(context, 14), dp(context, 11), dp(context, 14), dp(context, 11))
+                setBackgroundResource(R.drawable.cat_bg)
+                isFocusable = true; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; type(R.dimen.type_body); gravity = Gravity.CENTER_VERTICAL
+                setTextColor(resources.getColorStateList(R.drawable.tab_text, null))
+            }
+            return object : RecyclerView.ViewHolder(tv) {}
+        }
+        override fun onBindViewHolder(h: RecyclerView.ViewHolder, i: Int) {
+            val tv = h.itemView as TextView
+            val sel = (if (i == 0) null else catNames[i]) == group
+            tv.isActivated = sel
+            tv.text = catNames[i] + if (sel) "   ✓" else ""
+            tv.setOnClickListener { group = if (i == 0) null else catNames[i]; focusRow = 0; hidePanel(); show(focus = true) }
+            tv.setOnKeyListener { _, k, e ->
+                if (e.action != KeyEvent.ACTION_DOWN) false
+                else when (k) {
+                    KeyEvent.KEYCODE_DPAD_RIGHT -> { closePanel(); true }
+                    KeyEvent.KEYCODE_DPAD_LEFT -> true
+                    else -> false
+                }
+            }
+        }
     }
 
     private fun roundDown(t: Long) = t - t % 1_800_000L
     private fun winEnd() = winStart + windowMin * 60_000L
 
     fun show(focus: Boolean) {
-        if (winStart == 0L) winStart = roundDown(System.currentTimeMillis() - 30 * 60_000L)
+        if (winStart == 0L) { winStart = roundDown(System.currentTimeMillis() - 30 * 60_000L); baseStart = winStart }
         act.scope.launch {
             val only = Prefs.epgOnlyWithData
-            val list = withContext(Dispatchers.IO) { Db.epgChannels(only, 0, 150) }
+            val list = withContext(Dispatchers.IO) { Db.epgChannels(only, 0, 150, group) }
             channels = list
             if (list.isEmpty()) {
                 msg.visibility = View.VISIBLE
                 msg.text = if (Epg.url().isBlank()) "No guide source yet.\nOpen Settings > Guide (EPG) and enter an XMLTV URL. Xtream logins use the provider's guide automatically."
                 else if (Epg.refreshing) "Downloading the guide…" else "No guide data for your channels yet. Settings > Guide (EPG) > Refresh guide now."
+                if (group != null) { msg.text = "No guide data for the channels in this category.\nPress Left on the first block of any row to pick another one."; group = null }
                 rv.adapter?.notifyDataSetChanged()
+                if (focus) act.focusTabs()
                 return@launch
             }
             msg.visibility = View.GONE
@@ -160,9 +219,11 @@ class EpgPage(private val act: HomeActivity, root: View) {
                 else {
                     val parent = v.parent as FrameLayout
                     when (k) {
-                        KeyEvent.KEYCODE_DPAD_LEFT -> if (parent.indexOfChild(v) == 0) { shift(-60, pos, false); true } else false
+                        KeyEvent.KEYCODE_DPAD_LEFT -> if (parent.indexOfChild(v) == 0) { if (winStart > baseStart) shift(-60, pos, false) else openPanel(); true } else false
                         KeyEvent.KEYCODE_DPAD_RIGHT -> if (parent.indexOfChild(v) == parent.childCount - 1) { shift(60, pos, true); true } else false
                         KeyEvent.KEYCODE_DPAD_UP -> if (pos == 0) { act.focusTabs(); true } else false
+                        KeyEvent.KEYCODE_MEDIA_REWIND -> { shift(-60, pos, false); true }        // earlier than the starting window
+                        KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> { shift(60, pos, true); true }
                         else -> false
                     }
                 }

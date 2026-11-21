@@ -38,6 +38,9 @@ class PlayerActivity : BaseActivity() {
     private lateinit var pPlay: TextView
     private lateinit var banner: TextView
     private lateinit var chanList: RecyclerView
+    private lateinit var catList: RecyclerView
+    private var listGroup = ""          // category shown in the channel panel (may differ from the one playing)
+    private var catNames: List<String> = emptyList()
     private lateinit var side: View
     private lateinit var sideTitle: TextView
     private lateinit var sideList: RecyclerView
@@ -75,7 +78,7 @@ class PlayerActivity : BaseActivity() {
         root = findViewById(R.id.root); pv = findViewById(R.id.player); spin = findViewById(R.id.spin)
         overlay = findViewById(R.id.overlay); chips = findViewById(R.id.p_chips); pSub = findViewById(R.id.p_sub); pTitle = findViewById(R.id.p_title)
         barWrap = findViewById(R.id.p_bar_wrap); pBar = barWrap as SeekLine; pTime = findViewById(R.id.p_time); pPlay = findViewById(R.id.p_play); pPrev = findViewById(R.id.p_prev); pNext = findViewById(R.id.p_next)
-        banner = findViewById(R.id.p_banner); chanList = findViewById(R.id.chan_list)
+        banner = findViewById(R.id.p_banner); chanList = findViewById(R.id.chan_list); catList = findViewById(R.id.cat_list)
         side = findViewById(R.id.side); sideTitle = findViewById(R.id.side_title); sideList = findViewById(R.id.side_list)
         sideList.layoutManager = LinearLayoutManager(this)
 
@@ -107,10 +110,17 @@ class PlayerActivity : BaseActivity() {
             Db.touchLive(key)
             chanList.layoutManager = LinearLayoutManager(this)
             chanList.adapter = ChanAdapter()
+            chanList.itemAnimator = null
+            catList.layoutManager = LinearLayoutManager(this)
+            catList.itemAnimator = null
+            catList.adapter = CatAdapter()
+            listGroup = group
             scope.launch {
                 channels = withContext(Dispatchers.IO) { Db.page(kind, group, 0, 5000) }
                 chIndex = channels.indexOfFirst { it.url == key }
                 chanList.adapter?.notifyDataSetChanged()
+                catNames = withContext(Dispatchers.IO) { Categories.apply(Kind.LIVE, Db.groups(Kind.LIVE)).map { it.name } }
+                catList.adapter?.notifyDataSetChanged()
             }
         } else {
             resumeMs = Db.progressOf(key)
@@ -322,6 +332,16 @@ class PlayerActivity : BaseActivity() {
     // ---- keys -----------------------------------------------------------------------------------
 
     override fun dispatchKeyEvent(e: KeyEvent): Boolean {
+        if (isLive && e.action == KeyEvent.ACTION_DOWN && (chanList.visibility == View.VISIBLE || catList.visibility == View.VISIBLE)) {
+            val f = currentFocus
+            if (f != null && f.isIn(catList)) when (e.keyCode) {
+                KeyEvent.KEYCODE_DPAD_RIGHT -> { focusChannel(0); return true }     // categories -> channels
+                KeyEvent.KEYCODE_DPAD_LEFT -> return true
+            } else if (f != null && f.isIn(chanList)) when (e.keyCode) {
+                KeyEvent.KEYCODE_DPAD_RIGHT -> { hidePanels(); return true }       // back to the player, like Back
+                KeyEvent.KEYCODE_DPAD_LEFT -> { if (e.repeatCount == 0) showCats(); return true }
+            }
+        }
         if (chanList.visibility == View.VISIBLE || side.visibility == View.VISIBLE) return super.dispatchKeyEvent(e)
         if (e.action != KeyEvent.ACTION_DOWN) return super.dispatchKeyEvent(e)
         val p = engine ?: return super.dispatchKeyEvent(e)
@@ -377,7 +397,7 @@ class PlayerActivity : BaseActivity() {
     override fun onBackPressed() {
         when {
             side.visibility == View.VISIBLE -> side.visibility = View.GONE
-            chanList.visibility == View.VISIBLE -> chanList.visibility = View.GONE
+            chanList.visibility == View.VISIBLE || catList.visibility == View.VISIBLE -> hidePanels()
             overlay.visibility == View.VISIBLE -> { ui.removeCallbacks(hideOverlay); overlay.visibility = View.GONE }
             else -> super.onBackPressed()
         }
@@ -409,6 +429,47 @@ class PlayerActivity : BaseActivity() {
         focusChannel(0)
     }
 
+    private fun hidePanels() { chanList.visibility = View.GONE; catList.visibility = View.GONE; (chanList.layoutParams as ViewGroup.MarginLayoutParams).leftMargin = Tokens.pxi(this, R.dimen.safe_h) }
+
+    /** Left from the channel list: opens the category panel on the left with the cursor on the current category. */
+    private fun showCats() {
+        if (catNames.isEmpty()) return
+        (chanList.layoutParams as ViewGroup.MarginLayoutParams).leftMargin = Tokens.pxi(this, R.dimen.safe_h) + dp(this, 238)
+        chanList.requestLayout()
+        catList.visibility = View.VISIBLE
+        val at = maxOf(catNames.indexOf(listGroup), 0)
+        (catList.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(at, dp(this, 120))
+        focusCat(at, 0)
+    }
+
+    private fun focusCat(at: Int, tries: Int) {
+        val vh = catList.findViewHolderForAdapterPosition(at)
+        if (vh != null) vh.itemView.requestFocus() else if (tries < 8) catList.post { focusCat(at, tries + 1) }
+    }
+
+    private fun loadCategory(name: String) {
+        listGroup = name
+        scope.launch {
+            channels = withContext(Dispatchers.IO) { Db.page(kind, name, 0, 5000) }
+            chIndex = channels.indexOfFirst { it.url == key }
+            chanList.adapter?.notifyDataSetChanged()
+            catList.adapter?.notifyDataSetChanged()
+            chanList.scrollToPosition(0)
+            focusChannel(0)
+        }
+    }
+
+    private inner class CatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+        override fun getItemCount() = catNames.size
+        override fun onCreateViewHolder(p: ViewGroup, t: Int): RecyclerView.ViewHolder = object : RecyclerView.ViewHolder(listRow(p.context)) {}
+        override fun onBindViewHolder(h: RecyclerView.ViewHolder, i: Int) {
+            val tv = h.itemView as TextView
+            tv.text = catNames[i] + if (catNames[i] == listGroup) "   ✓" else ""
+            tv.setTextColor(getColor(if (catNames[i] == listGroup) R.color.accent else R.color.text))
+            tv.setOnClickListener { loadCategory(catNames[i]) }
+        }
+    }
+
     private fun focusChannel(tries: Int) {
         val vh = chanList.findViewHolderForAdapterPosition(maxOf(chIndex, 0))
         if (vh != null) vh.itemView.requestFocus() else if (tries < 8) chanList.post { focusChannel(tries + 1) }
@@ -420,12 +481,13 @@ class PlayerActivity : BaseActivity() {
         override fun onBindViewHolder(h: RecyclerView.ViewHolder, i: Int) {
             val tv = h.itemView as TextView
             tv.text = "${i + 1}   ${cleanTitle(channels[i].name)}"
-            tv.setTextColor(getColor(if (i == chIndex) R.color.accent else R.color.text))
+            tv.setTextColor(getColor(if (channels[i].url == key) R.color.accent else R.color.text))
             tv.setOnClickListener {
+                val old = chIndex
                 chIndex = i
-                chanList.visibility = View.GONE
-                startChannel(channels[i])
-                notifyDataSetChanged()
+                startChannel(channels[i])            // the panel stays open so you can keep browsing
+                if (old in channels.indices) notifyItemChanged(old)
+                notifyItemChanged(i)
             }
         }
     }

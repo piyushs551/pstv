@@ -258,9 +258,10 @@ object Db {
     fun epgCount(): Int = rd.rawQuery("SELECT COUNT(*) FROM epg", null).use { it.moveToFirst(); it.getInt(0) }
 
     /** Live channels for the guide grid. */
-    fun epgChannels(onlyWithData: Boolean, offset: Int, limit: Int): List<Item> = query(
-        if (onlyWithData) "SELECT $COLS FROM items WHERE kind=0 AND tvg IN (SELECT DISTINCT ch FROM epg) ORDER BY sort LIMIT $limit OFFSET $offset"
-        else "SELECT $COLS FROM items WHERE kind=0 ORDER BY sort LIMIT $limit OFFSET $offset"
+    fun epgChannels(onlyWithData: Boolean, offset: Int, limit: Int, group: String? = null): List<Item> = query(
+        "SELECT $COLS FROM items WHERE kind=0" + (if (onlyWithData) " AND tvg IN (SELECT DISTINCT ch FROM epg)" else "") +
+            (if (group != null) " AND grp=?" else "") + " ORDER BY sort LIMIT $limit OFFSET $offset",
+        *(if (group != null) arrayOf(group) else emptyArray())
     )
 
     fun epgRange(channels: List<String>, from: Long, to: Long): Map<String, List<Prog>> {

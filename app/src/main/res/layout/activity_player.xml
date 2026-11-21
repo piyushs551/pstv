@@ -70,6 +70,17 @@
         android:visibility="gone" />
 
     <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/cat_list"
+        android:layout_width="230dp"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="@dimen/safe_v"
+        android:layout_marginLeft="@dimen/safe_h"
+        android:layout_marginTop="@dimen/safe_v"
+        android:background="@drawable/frost_panel"
+        android:padding="8dp"
+        android:visibility="gone" />
+
+    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chan_list"
         android:layout_width="280dp"
         android:layout_height="match_parent"

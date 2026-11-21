@@ -179,6 +179,7 @@ class HomeActivity : BaseActivity(), CardHost {
         val onTabs = inTabs(currentFocus)
         when {
             drawer.visibility == View.VISIBLE -> closeDrawer(true)
+            epg.panelOpen -> epg.closePanel()
             !onTabs && (tab == 1 || tab == 4 || tab == 5) -> {
                 (rowsRv.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(0, 0)
                 setChrome(true); focusTabs()
@@ -220,6 +221,7 @@ class HomeActivity : BaseActivity(), CardHost {
         rowsPage.visibility = if (isRows) View.VISIBLE else View.GONE
         livePageView.visibility = if (i == 2) View.VISIBLE else View.GONE
         epgPageView.visibility = if (i == 3) View.VISIBLE else View.GONE
+        if (i != 3) epg.hidePanel()
         setChrome(true, force = true)
         when (i) {
             1, 4, 5 -> buildRows(i, focus)
@@ -355,7 +357,7 @@ class HomeActivity : BaseActivity(), CardHost {
         }
         val r = super.dispatchKeyEvent(e)
         if (e.action == KeyEvent.ACTION_UP && e.keyCode in dpad) rowsRv.postDelayed({
-            if (currentFocus == null && drawer.visibility != View.VISIBLE) when (tab) { 1, 4, 5 -> focusRow(curRow); 2 -> live.focusFirst(); 3 -> epg.focusFirst() }
+            if (currentFocus == null && drawer.visibility != View.VISIBLE && !epg.panelOpen) when (tab) { 1, 4, 5 -> focusRow(curRow); 2 -> live.focusFirst(); 3 -> epg.focusFirst() }
         }, 160)
         return r
     }
