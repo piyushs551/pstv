@@ -103,7 +103,7 @@ class CardAdapter(private val row: RowDesc, private val host: CardHost) : Recycl
         Images.card(h.img, item.cardArt, cleanTitle(item.name), w, ht, when (item.kind) { Kind.LIVE -> R.drawable.ic_live; Kind.MOVIE -> R.drawable.ic_movies; Kind.SERIES -> R.drawable.ic_shows },
             if (logoOnly) { bmp -> if (h.itemView.tag == item.url) h.frame.setBackgroundResource(if (Images.isDark(bmp)) R.drawable.card_bg_light else R.drawable.card_bg) } else null)
         h.label.text = cleanTitle(item.name)
-        h.sub.text = if (row.tagMode == 1) item.group else Card.sub(item)
+        h.sub.text = when (row.tagMode) { 1 -> item.group; 3 -> item.overview ?: ""; else -> Card.sub(item) }
         // tagMode 1 ("other versions"): quality tag, else the category; tagMode 2: quality tag only
         val tagText = when (row.tagMode) { 1 -> qualityTag(item.name) ?: item.group.takeIf { it.isNotBlank() }?.take(18); 2 -> qualityTag(item.name); else -> null }
         h.tag.visibility = if (tagText != null && !row.ranked) View.VISIBLE else View.GONE

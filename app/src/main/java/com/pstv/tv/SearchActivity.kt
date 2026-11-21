@@ -181,10 +181,13 @@ class SearchActivity : BaseActivity(), CardHost {
             val n = g.name.lowercase()
             words.all { n.contains(it) } && (filter == 0 || (filter == 1 && g.kind == Kind.MOVIE) || (filter == 2 && g.kind == Kind.SERIES) || (filter == 3 && g.kind == Kind.LIVE))
         }.sortedByDescending { it.count }.take(3).map { g -> RowDesc("g:${g.kind}:${g.name}", "Category · ${g.name}") { o, l -> Db.page(g.kind, g.name, o, l) } }
+        val guide = if (Prefs.guideSearch && (filter == 0 || filter == 3)) Db.guideSearch(text).takeIf { it.isNotEmpty() } else null
+        val guideRow = guide?.let { l -> RowDesc("guide", "Airing on the guide  ·  ${l.size}", tagMode = 3) { o, _ -> if (o == 0) l else emptyList() } }
         return listOfNotNull(
             if (filter == 0 || filter == 1) row("m", "Movies", Kind.MOVIE) else null,
             if (filter == 0 || filter == 2) row("s", "TV shows", Kind.SERIES) else null,
             if (filter == 0 || filter == 3) row("l", "Channels", Kind.LIVE) else null,
+            guideRow,
         ) + cats
     }
 

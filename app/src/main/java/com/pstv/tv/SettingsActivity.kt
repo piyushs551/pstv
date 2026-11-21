@@ -171,6 +171,7 @@ class SettingsActivity : BaseActivity() {
 
     private fun pg_artwork() {
         row("TMDB API key", { keyLabel(Prefs.tmdbKeyUser, BuildConfig.TMDB_KEY) }) { edit("TMDB API key (v3). Leave empty to use the built-in key", Prefs.tmdbKeyUser, password = true) { Prefs.tmdbKeyUser = it; Prefs.trendingAt = 0 } }
+        row("Search the guide", { if (Prefs.guideSearch) "On: search also finds programs airing now or today" else "Off: channel names only" }) { Prefs.guideSearch = !Prefs.guideSearch }
         row("Smart search", { if (Prefs.smartSearch) "On: \"bollywood comedy\", \"christmas movies\" use TMDB" else "Off: text search only" }) { Prefs.smartSearch = !Prefs.smartSearch }
         row("Test TMDB key", { "Checks that TMDB accepts the key" }) { toast("Checking…"); Repo.scope.launch { val m = Tmdb.test(); runOnUiThread { toast(m) } } }
         row("Image cache size", { "${Prefs.cacheMb} MB   (used ${Images.diskBytes() / 1_048_576} MB)" }) {

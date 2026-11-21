@@ -73,6 +73,8 @@ object Prefs {
     /** When an episode ends, play the next one automatically. */
     var autoNext: Boolean get() = i("autonext", 1) == 1; set(v) = put("autonext", if (v) 1 else 0)
     /** Themed searches ("bollywood comedy") ask TMDB live and keep only titles in the playlist. */
+    /** Search also looks at program titles in the guide (channels airing it now or later today). */
+    var guideSearch: Boolean get() = i("guidesearch", 1) == 1; set(v) = put("guidesearch", if (v) 1 else 0)
     var smartSearch: Boolean get() = i("smartsearch", 1) == 1; set(v) = put("smartsearch", if (v) 1 else 0)
     /** Seconds before the player controls hide again (0 = never). */
     var hideSecs: Int get() = i("hidesecs", 5); set(v) = put("hidesecs", v)

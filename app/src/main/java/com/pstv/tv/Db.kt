@@ -264,6 +264,30 @@ object Db {
         *(if (group != null) arrayOf(group) else emptyArray())
     )
 
+    /** Channels with a program matching every word that is airing now or within [hoursAhead]; the program and time go in `overview`. */
+    fun guideSearch(q: String, hoursAhead: Int = 24, limit: Int = 60): List<Item> {
+        val words = normTitle(q).split(' ').filter { it.length >= 2 }
+        if (words.isEmpty()) return emptyList()
+        val now = System.currentTimeMillis()
+        val fmt = java.text.SimpleDateFormat("h:mm a", java.util.Locale.getDefault())
+        val where = words.joinToString(" AND ") { "title LIKE ?" }
+        val args = arrayOf(now.toString(), (now + hoursAhead * 3_600_000L).toString()) + words.map { "%$it%" }
+        val progs = ArrayList<Pair<String, Prog>>()
+        rd.rawQuery("SELECT ch,start,stop,title FROM epg WHERE stop>? AND start<? AND $where ORDER BY (start>?), start LIMIT 300", args + now.toString()).use { c ->
+            while (c.moveToNext()) progs += c.getString(0) to Prog(c.getLong(1), c.getLong(2), c.getString(3) ?: "")
+        }
+        val out = ArrayList<Item>(); val seen = HashSet<String>()
+        for ((ch, p) in progs) {
+            val items = query("SELECT $COLS FROM items WHERE kind=0 AND tvg=? LIMIT 3", ch)
+            for (it in items) if (seen.add(it.url + p.start)) {
+                val whenText = if (p.start <= now) "Now" else fmt.format(java.util.Date(p.start))
+                out += it.copy(overview = "$whenText · ${p.title}")
+                if (out.size >= limit) return out
+            }
+        }
+        return out
+    }
+
     fun epgRange(channels: List<String>, from: Long, to: Long): Map<String, List<Prog>> {
         if (channels.isEmpty()) return emptyMap()
         val ph = channels.joinToString(",") { "?" }
