@@ -23,4 +23,13 @@ class CategoriesTest {
         assertEquals(src, Categories.smartSort(src))
         Prefs.catSmart = true
     }
+
+    @Test fun changingThePriorityDropsManualOrderSoItIsHonoured() {
+        Prefs.catSmart = true; Prefs.catPriority = "hindi,india"
+        val groups = listOf(g("ENGLISH"), g("HINDI MOVIES"), g("OTHER"))
+        Categories.save(Kind.MOVIE, listOf("ENGLISH", "OTHER", "HINDI MOVIES"), emptySet())
+        assertEquals(listOf("ENGLISH", "OTHER", "HINDI MOVIES"), Categories.apply(Kind.MOVIE, groups).map { it.name })   // a manual order wins until...
+        Categories.clearOrders()                                                                                     // ...the priority is changed
+        assertEquals(listOf("HINDI MOVIES", "ENGLISH", "OTHER"), Categories.apply(Kind.MOVIE, groups).map { it.name })
+    }
 }

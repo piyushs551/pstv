@@ -70,7 +70,7 @@ class CategoriesActivity : BaseActivity() {
         val g = groups[pos]
         val isHidden = g.name in hidden
         AlertDialog.Builder(this, R.style.Theme_Pstv_Dialog).setTitle(g.name)
-            .setItems(arrayOf("Move to top", "Move up", "Move down", "Move to bottom", if (isHidden) "Show" else "Hide", "Reset all to the playlist's order")) { _, i ->
+            .setItems(arrayOf("Move to top", "Move up", "Move down", "Move to bottom", if (isHidden) "Show" else "Hide", "Reset to the default order")) { _, i ->
                 when (i) {
                     0 -> move(pos, 0)
                     1 -> move(pos, pos - 1)
@@ -79,7 +79,7 @@ class CategoriesActivity : BaseActivity() {
                     4 -> { if (isHidden) hidden.remove(g.name) else hidden.add(g.name); persist(); list.adapter?.notifyItemChanged(pos); refocus(pos) }
                     5 -> scope.launch {
                         Categories.reset(kind); hidden.clear()
-                        groups = withContext(Dispatchers.IO) { Db.groups(kind) }.toMutableList()
+                        groups = withContext(Dispatchers.IO) { Categories.apply(kind, Db.groups(kind), includeHidden = true) }.toMutableList()
                         list.adapter?.notifyDataSetChanged(); refocus(0)
                     }
                 }

@@ -140,7 +140,7 @@ class HomeActivity : BaseActivity(), CardHost {
                 val tv = h.itemView as TextView
                 if (i == 0) {
                     tv.text = "⇅  Sort: ${Sorts.label(Prefs.itemSort)}"; tv.isActivated = false
-                    tv.setOnClickListener { Prefs.itemSort = Sorts.next(Prefs.itemSort); closeDrawer(false); buildRows(tab, false); toast("Sorted: ${Sorts.label(Prefs.itemSort)}") }
+                    tv.setOnClickListener { Prefs.itemSort = Sorts.next(Prefs.itemSort); tv.text = "⇅  Sort: ${Sorts.label(Prefs.itemSort)}"; buildRows(tab, false); toast("Sorted: ${Sorts.label(Prefs.itemSort)}") }   // list stays open
                 } else {
                     tv.text = titles[i]; tv.isActivated = i - 1 == curRow
                     tv.setOnClickListener { closeDrawer(false); focusRow(i - 1) }

@@ -160,8 +160,9 @@ class SettingsActivity : BaseActivity() {
 
     private fun pg_categories() {
         row("Sort items inside categories", { Sorts.label(Prefs.itemSort) }) { choose("Sort items (Movies and TV shows)", Sorts.all.map { it.second to it.first }, Prefs.itemSort) { Prefs.itemSort = it } }
-        row("Smart default order", { if (Prefs.catSmart) "On: priority words first, then newest year" else "Off: playlist order" }) { Prefs.catSmart = !Prefs.catSmart }
-        row("Priority words", { Prefs.catPriority }) { edit("Words that move a category to the top (comma separated, first = highest)", Prefs.catPriority) { Prefs.catPriority = it } }
+        row("Smart default order", { if (Prefs.catSmart) "On: priority words first, then newest year" else "Off: playlist order" }) { Prefs.catSmart = !Prefs.catSmart; Categories.clearOrders(); toast("Category order now follows this setting") }
+        row("Apply priority order now", { "Drops your manual category moves; hidden categories stay hidden" }) { Categories.clearOrders(); toast("Categories now follow the priority words") }
+        row("Priority words", { Prefs.catPriority }) { edit("Words that move a category to the top (comma separated, first = highest)", Prefs.catPriority) { Prefs.catPriority = it; Categories.clearOrders(); toast("Category order now follows the priority words") } }
         row("Live categories", { "Reorder or hide" }) { startActivity(android.content.Intent(this, CategoriesActivity::class.java).putExtra("kind", Kind.LIVE.ordinal)) }
         row("Movie categories", { "Reorder or hide (for example Indian first)" }) { startActivity(android.content.Intent(this, CategoriesActivity::class.java).putExtra("kind", Kind.MOVIE.ordinal)) }
         row("TV show categories", { "Reorder or hide" }) { startActivity(android.content.Intent(this, CategoriesActivity::class.java).putExtra("kind", Kind.SERIES.ordinal)) }

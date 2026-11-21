@@ -33,6 +33,9 @@ object Categories {
 
     fun reset(kind: Kind) = save(kind, emptyList(), emptySet())
 
+    /** Forget every manual order (hidden categories are kept) so the priority words / smart order apply again. */
+    fun clearOrders() { for (k in Kind.values()) save(k, emptyList(), hidden(k)) }
+
     /** Custom order first, then everything else in playlist order; hidden ones dropped unless [includeHidden]. */
     fun apply(kind: Kind, groups: List<Group>, includeHidden: Boolean = false): List<Group> {
         val ord = order(kind); val hid = hidden(kind)
