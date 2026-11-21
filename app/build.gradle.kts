@@ -22,7 +22,7 @@ android {
         applicationId = "com.pstv.tv"
         minSdk = 25          // Fire OS 6 = Android 7.1
         targetSdk = 34       // installs fine on Fire OS 6
-        versionCode = 2
+        versionCode = 3
         versionName = "0.1.0"
         resourceConfigurations += "en"   // drop library translations (smaller APK)
         buildConfigField("String", "TMDB_KEY", "\"${keyOf("tmdb")}\"")
