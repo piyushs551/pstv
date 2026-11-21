@@ -65,6 +65,8 @@ Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending 
 
 - Round 12: category order bug fixed: manual moves saved the whole list so priority words never applied again. Now editing Priority words / Smart order, or "Apply priority order now", clears manual orders (hidden kept); "Reset" shows the default (priority) order; Sort entry in the Movies/TV category list updates in place and keeps the list open.
 
+- Round 13: new app icon = "PS" monogram + play triangle on the purple tile (mipmaps + 320x180 TV banner regenerated; generator kept out of the repo).
+
 ## Engine decision (round 3)
 - User reported MPV crashes on the stick and live MP2 audio is silent on ExoPlayer. MPV removed; Media3 upgraded 1.4.1 -> 1.7.1 and NextLib FFmpeg decoders added (software fallback for unsupported audio). UNVERIFIED on device. If a stream is still silent, report the track label from Audio panel.
 
