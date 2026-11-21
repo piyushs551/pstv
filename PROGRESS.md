@@ -67,6 +67,8 @@ Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending 
 
 - Round 13: new app icon = "PS" monogram + play triangle on the purple tile (mipmaps + 320x180 TV banner regenerated; generator kept out of the repo).
 
+- Round 13b: Fire TV home banner redone full-bleed 16:9 (640x360, drawable-nodpi): PS + play triangle centred on the purple gradient, tagline beneath. Square mipmap icon unchanged.
+
 ## Engine decision (round 3)
 - User reported MPV crashes on the stick and live MP2 audio is silent on ExoPlayer. MPV removed; Media3 upgraded 1.4.1 -> 1.7.1 and NextLib FFmpeg decoders added (software fallback for unsupported audio). UNVERIFIED on device. If a stream is still silent, report the track label from Audio panel.
 
