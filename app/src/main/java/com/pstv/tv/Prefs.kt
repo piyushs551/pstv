@@ -13,11 +13,16 @@ object Prefs {
     private fun put(k: String, v: Int) = sp.edit().putInt(k, v).apply()
 
     /** "m3u" or "xtream" */
-    var sourceType: String get() = s("source", "m3u"); set(v) = put("source", v)
-    var m3uUrl: String get() = s("m3u"); set(v) = put("m3u", v.trim())
-    var xHost: String get() = s("xhost"); set(v) = put("xhost", v.trim().trimEnd('/'))
-    var xUser: String get() = s("xuser"); set(v) = put("xuser", v.trim())
-    var xPass: String get() = s("xpass"); set(v) = put("xpass", v.trim())
+    var sourceType: String get() = s("source", BuildConfig.SOURCE.ifBlank { "m3u" }); set(v) = put("source", v)
+    // Playlist: a value typed in Settings wins; otherwise the one built in from keys.properties (scripts\set-keys.ps1).
+    var m3uUrlUser: String get() = s("m3u"); set(v) = put("m3u", v.trim())
+    var xHostUser: String get() = s("xhost"); set(v) = put("xhost", v.trim().trimEnd('/'))
+    var xUserUser: String get() = s("xuser"); set(v) = put("xuser", v.trim())
+    var xPassUser: String get() = s("xpass"); set(v) = put("xpass", v.trim())
+    val m3uUrl: String get() = m3uUrlUser.ifEmpty { BuildConfig.M3U_URL }
+    val xHost: String get() = xHostUser.ifEmpty { BuildConfig.X_HOST.trim().trimEnd('/') }
+    val xUser: String get() = xUserUser.ifEmpty { BuildConfig.X_USER }
+    val xPass: String get() = xPassUser.ifEmpty { BuildConfig.X_PASS }
 
     // Keys: a value typed in Settings wins; otherwise the key baked in at build time (keys.properties) is used.
     var tmdbKeyUser: String get() = s("tmdb"); set(v) = put("tmdb", v.trim())

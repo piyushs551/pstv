@@ -81,3 +81,7 @@ Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending 
 ## Open risks / unverified on device
 - MPV: user reported manual switch to MPV on a live channel stayed loading then the app dropped to Home (native crash suspected on Fire OS 6 / API 25). Crash guard added (Prefs.mpvPending/mpvBroken). Need `adb logcat -b crash -d` to find the cause. MP2 live audio is silent on ExoPlayer; alternative fix = FFmpeg audio decoder extension for Media3 (NextLib) instead of MPV.
 - Everything: nothing has run on a Fire TV yet. MPV on API 25. Match framerate on Fire OS. EPG matching depends on provider tvg-id/epg_channel_id. RAM <150 MB unmeasured.
+
+## Playlist via set-keys.ps1
+- `scripts\set-keys.ps1` now also saves the playlist (source, m3u_url / x_host, x_user, x_pass) into git-ignored keys.properties; baked into BuildConfig.
+- Prefs: Settings value overrides the built-in one; Settings rows show "Built in". Repo reloads the playlist when the source signature changes (first launch after a rebuild). Built only, not run on the Fire TV.

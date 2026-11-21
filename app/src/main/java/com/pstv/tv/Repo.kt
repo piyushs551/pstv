@@ -26,6 +26,8 @@ object Repo {
 
     fun refreshIfStale() {
         if (!Prefs.hasSource) return
+        val sig = "${Prefs.sourceType}|${Prefs.m3uUrl}|${Prefs.xHost}|${Prefs.xUser}".hashCode().toString()
+        if (Prefs.rawGet("sourcesig") != sig) { Prefs.rawPut("sourcesig", sig); refresh(); return }   // new/changed playlist: load it now
         if (Prefs.normVersion != NORM_V) { Prefs.normVersion = NORM_V; refresh(); return }   // titles are matched differently now: re-import once
         if (Db.count() == 0 || (Prefs.refreshHours > 0 && System.currentTimeMillis() - Prefs.lastRefresh > Prefs.refreshHours * 3_600_000L)) refresh()
         Epg.refreshIfStale()

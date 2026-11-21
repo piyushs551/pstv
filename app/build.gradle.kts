@@ -26,6 +26,11 @@ android {
         versionName = "0.1.0"
         resourceConfigurations += "en"   // drop library translations (smaller APK)
         buildConfigField("String", "TMDB_KEY", "\"${keyOf("tmdb")}\"")
+        buildConfigField("String", "SOURCE", "\"${keyOf("source")}\"")
+        buildConfigField("String", "M3U_URL", "\"${keyOf("m3u_url")}\"")
+        buildConfigField("String", "X_HOST", "\"${keyOf("x_host")}\"")
+        buildConfigField("String", "X_USER", "\"${keyOf("x_user")}\"")
+        buildConfigField("String", "X_PASS", "\"${keyOf("x_pass")}\"")
         buildConfigField("String", "OS_KEY", "\"${keyOf("os_key")}\"")
         buildConfigField("String", "OS_USER", "\"${keyOf("os_user")}\"")
         buildConfigField("String", "OS_PASS", "\"${keyOf("os_pass")}\"")

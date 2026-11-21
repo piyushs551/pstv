@@ -103,10 +103,10 @@ class SettingsActivity : BaseActivity() {
         row("Source type", { if (Prefs.sourceType == "xtream") "Xtream login" else "M3U URL" }) {
             Prefs.sourceType = if (Prefs.sourceType == "xtream") "m3u" else "xtream"
         }
-        row("M3U URL", { orNotSet(Prefs.m3uUrl) }) { edit("M3U URL", Prefs.m3uUrl, hint = "http://…/playlist.m3u") { Prefs.m3uUrl = it } }
-        row("Xtream server", { orNotSet(Prefs.xHost) }) { edit("Xtream server", Prefs.xHost, hint = "http://host:port") { Prefs.xHost = it } }
-        row("Xtream username", { orNotSet(Prefs.xUser) }) { edit("Xtream username", Prefs.xUser) { Prefs.xUser = it } }
-        row("Xtream password", { mask(Prefs.xPass) }) { edit("Xtream password", Prefs.xPass, password = true) { Prefs.xPass = it } }
+        row("M3U URL", { keyLabel(Prefs.m3uUrlUser, BuildConfig.M3U_URL) }) { edit("M3U URL (leave empty to use the built-in one)", Prefs.m3uUrlUser, hint = "http://…/playlist.m3u") { Prefs.m3uUrlUser = it } }
+        row("Xtream server", { keyLabel(Prefs.xHostUser, BuildConfig.X_HOST) }) { edit("Xtream server (leave empty to use the built-in one)", Prefs.xHostUser, hint = "http://host:port") { Prefs.xHostUser = it } }
+        row("Xtream username", { keyLabel(Prefs.xUserUser, BuildConfig.X_USER) }) { edit("Xtream username (leave empty to use the built-in one)", Prefs.xUserUser) { Prefs.xUserUser = it } }
+        row("Xtream password", { keyLabel(Prefs.xPassUser, BuildConfig.X_PASS) }) { edit("Xtream password (leave empty to use the built-in one)", Prefs.xPassUser, password = true) { Prefs.xPassUser = it } }
         row("Refresh playlist now", {
             when {
                 Repo.refreshing -> "Updating…"
