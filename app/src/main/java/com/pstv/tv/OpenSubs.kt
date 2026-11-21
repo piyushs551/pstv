@@ -13,7 +13,7 @@ object OpenSubs {
 
     data class Hit(val fileId: Int, val release: String, val lang: String, val downloads: Int)
 
-    private fun headers() = mapOf("Api-Key" to Prefs.osKey, "Accept" to "application/json")
+    private fun headers() = mapOf("Api-Key" to Prefs.osKey, "Accept" to "application/json", "User-Agent" to "PSTV v${BuildConfig.VERSION_NAME}")   // OpenSubtitles wants "AppName vX.Y"
 
     fun search(title: String, year: Int?, season: Int?, episode: Int?): List<Hit> {
         require(Prefs.osKey.isNotEmpty()) { "Add your OpenSubtitles API key in Settings" }
