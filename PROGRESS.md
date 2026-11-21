@@ -85,3 +85,4 @@ Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending 
 ## Playlist via set-keys.ps1
 - `scripts\set-keys.ps1` now also saves the playlist (source, m3u_url / x_host, x_user, x_pass) into git-ignored keys.properties; baked into BuildConfig.
 - Prefs: Settings value overrides the built-in one; Settings rows show "Built in". Repo reloads the playlist when the source signature changes (first launch after a rebuild). Built only, not run on the Fire TV.
+- Fire OS home row kept showing a stale tile after reinstall: banner renamed to `tv_banner`, versionCode 2 so the launcher treats it as a new tile (no launcher data cleared). Built only; not verified on the Fire TV.
