@@ -94,7 +94,7 @@ class HomeActivity : BaseActivity(), CardHost {
         findViewById<View>(R.id.rail_fav).setOnClickListener { startActivity(Intent(this, FavoritesActivity::class.java)) }
         findViewById<View>(R.id.nav_settings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         for (id in listOf(R.id.rail_search, R.id.rail_fav, R.id.nav_settings)) findViewById<View>(id).setOnKeyListener { _, k, e ->
-            if (k == KeyEvent.KEYCODE_DPAD_RIGHT && e.action == KeyEvent.ACTION_DOWN) { focusPage(); true } else false
+            if (k == KeyEvent.KEYCODE_DPAD_RIGHT && e.action == KeyEvent.ACTION_DOWN) { if (drawer.visibility == View.VISIBLE) focusDrawer() else focusPage(); true } else false
         }
         val play = findViewById<View>(R.id.hero_play)
         play.nextFocusUpId = tabs.getChildAt(1).also { if (it.id == View.NO_ID) it.id = View.generateViewId() }.id
@@ -145,12 +145,28 @@ class HomeActivity : BaseActivity(), CardHost {
                     tv.text = titles[i]; tv.isActivated = i - 1 == curRow
                     tv.setOnClickListener { closeDrawer(false); focusRow(i - 1) }
                 }
-                tv.setOnKeyListener { _, k, e -> if (k == KeyEvent.KEYCODE_DPAD_RIGHT && e.action == KeyEvent.ACTION_DOWN) { closeDrawer(true); true } else false }
+                tv.setOnKeyListener { _, k, e ->
+                    if (e.action != KeyEvent.ACTION_DOWN) false
+                    else when (k) {
+                        KeyEvent.KEYCODE_DPAD_RIGHT -> { closeDrawer(true); true }                           // back to the row you were on
+                        KeyEvent.KEYCODE_DPAD_LEFT -> { findViewById<View>(R.id.rail_search).requestFocus(); true }   // to the side tray, list stays open
+                        else -> false
+                    }
+                }
             }
         }
         drawer.visibility = View.VISIBLE
         (drawer.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(curRow + 1, dp(this, 80))
         drawer.post { (drawer.layoutManager as LinearLayoutManager).findViewByPosition(curRow + 1)?.requestFocus() }
+    }
+
+    /** Focus the category list entry of the row you were on (entry 0 is the sort control). */
+    private fun focusDrawer(tries: Int = 0) {
+        val lm = drawer.layoutManager as LinearLayoutManager
+        val v = lm.findViewByPosition(curRow + 1)
+        if (v != null) { v.requestFocus(); return }
+        lm.scrollToPositionWithOffset(curRow + 1, dp(this, 80))
+        if (tries < 5) drawer.post { focusDrawer(tries + 1) }
     }
 
     private fun closeDrawer(refocus: Boolean) { drawer.visibility = View.GONE; if (refocus) focusRow(curRow) }

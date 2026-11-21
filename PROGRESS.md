@@ -61,6 +61,8 @@ Prime shots 6-8 (series detail), 9-12 (Live) described in notes; images pending 
 
 - Round 10 (player): Previous/Next episode buttons (series; also media keys); arrow keys move explicitly between Previous/Pause/Next/Audio/Subtitles/Aspect and the progress line; audio language/track remembered per movie/series (Db v4 audiopref, pruned when the title leaves Continue Watching); controls auto-hide (Settings > Player: 3/5/8 s/never); progress is one thin line (SeekLine) that thickens + dot when focused; hold-to-seek speeds up (Settings: off/normal/fast; SeekController.stepFor, SeekStepTest); default seek step 5 s for new installs.
 
+- Round 11: Movies/TV category list sits between the side tray and the rows: row Left (first card) -> list; list Left -> side tray (list stays open); tray Right -> list at the current category; list Right -> back to the row.
+
 ## Engine decision (round 3)
 - User reported MPV crashes on the stick and live MP2 audio is silent on ExoPlayer. MPV removed; Media3 upgraded 1.4.1 -> 1.7.1 and NextLib FFmpeg decoders added (software fallback for unsupported audio). UNVERIFIED on device. If a stream is still silent, report the track label from Audio panel.
 
