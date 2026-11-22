@@ -45,20 +45,22 @@ object OpenSubs {
 
     /** Returns the subtitle as SRT text. */
     fun download(fileId: Int): String {
-        if (token == null) login()
+        val anon = Prefs.osUser.isEmpty() || Prefs.osPass.isEmpty()   // consumers that allow anonymous use can download without logging in
+        if (!anon && token == null) login()
         fun call(): String {
             val body = JSONObject().put("file_id", fileId).toString().toRequestBody("application/json".toMediaType())
             val req = Http.req("https://$tokenHost/api/v1/download").apply {
                 headers().forEach { (k, v) -> header(k, v) }
-                header("Authorization", "Bearer $token")
+                if (!anon) header("Authorization", "Bearer $token")
             }.post(body).build()
             Http.client.newCall(req).execute().use { r ->
                 if (r.code == 401) { token = null; error("401") }
-                if (!r.isSuccessful) error("Download failed (HTTP ${r.code})")
-                return JSONObject(r.body!!.string()).optString("link").ifBlank { error("No download link (quota reached?)") }
+                val txt = r.body!!.string()
+                if (!r.isSuccessful) error("Download failed (HTTP ${r.code}" + (runCatching { JSONObject(txt).optString("message") }.getOrDefault("").let { if (it.isNotBlank()) ": ${it.take(100)}" else "" }) + ")")
+                return JSONObject(txt).optString("link").ifBlank { error("No download link (quota reached?)") }
             }
         }
-        val link = try { call() } catch (e: IllegalStateException) { if (e.message == "401") { login(); call() } else throw e }
+        val link = try { call() } catch (e: IllegalStateException) { if (e.message == "401" && !anon) { login(); call() } else throw e }
         return Http.getString(link)
     }
 }
