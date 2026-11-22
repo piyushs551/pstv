@@ -109,6 +109,15 @@ class LivePage(private val act: HomeActivity, root: View) : CardHost {
     // ---- tiles ----------------------------------------------------------------------------------
 
     override fun onCardClick(item: Item) = Nav.open(act, item)
+    override fun onCardMenu(row: RowDesc, item: Item, anchor: View) {
+        val extra = ArrayList<CardMenu.Entry>()
+        if (row.key == "live:Recently watched channels") {
+            extra += CardMenu.Entry("Remove from recent channels") { Db.removeLiveHist(item.url); act.toast("Removed") }
+            extra += CardMenu.Entry("Clear this list") { Db.clearLiveHist(); act.toast("List cleared") }
+        }
+        CardMenu.show(act, anchor, CardMenu.forItem(act, item, extra) { show(focus = false); focusGrid() })
+    }
+
     override fun onCardLongClick(item: Item) { act.toast(if (Db.toggleFav(item.url)) "Added to Favorites" else "Removed from Favorites") }
 
     override fun onCardKey(row: RowDesc, pos: Int, keyCode: Int, e: KeyEvent): Boolean = when (keyCode) {

@@ -287,7 +287,7 @@ class HomeActivity : BaseActivity(), CardHost {
     }
 
     /** After coming back from the player/Settings: update Continue Watching / Favorites / Recent channels, adding rows that were empty before. */
-    private fun refreshPersonalRows() {
+    private fun refreshPersonalRows(then: (() -> Unit)? = null) {
         if (tab != 1) return
         scope.launch {
             var rebuild = false
@@ -298,9 +298,11 @@ class HomeActivity : BaseActivity(), CardHost {
                 if (row == null) { if (fresh.isNotEmpty()) rebuild = true; continue }
                 if (fresh.isEmpty()) { onRowEmpty(row); continue }
                 row.items.clear(); row.items.addAll(fresh); row.done = true; row.started = true
+                row.lastPos = row.lastPos.coerceIn(0, maxOf(0, fresh.size - 1))
                 adapter?.notifyItemChanged(rows.indexOf(row))
             }
             if (rebuild) buildRows(1, false)
+            then?.let { rowsRv.post(it) }
         }
     }
 
@@ -389,6 +391,22 @@ class HomeActivity : BaseActivity(), CardHost {
     override fun onCardClick(item: Item) = Nav.open(this, item)
 
     override fun onCardLongClick(item: Item) = Nav.info(this, item) { refreshPersonalRows() }
+
+    override fun onCardMenu(row: RowDesc, item: Item, anchor: View) {
+        val extra = ArrayList<CardMenu.Entry>()
+        val cw = when (row.key) { "recentm" -> Kind.MOVIE; "recents" -> Kind.SERIES; else -> null }
+        when (row.key) {
+            "recentm", "recents", "recent" -> {
+                extra += CardMenu.Entry("Remove from Continue watching") { Db.removeRecent(item.url); toast("Removed") }
+                extra += CardMenu.Entry("Clear this list") { Db.clearRecents(cw); toast("List cleared") }
+            }
+            "livehist" -> {
+                extra += CardMenu.Entry("Remove from recent channels") { Db.removeLiveHist(item.url); toast("Removed") }
+                extra += CardMenu.Entry("Clear this list") { Db.clearLiveHist(); toast("List cleared") }
+            }
+        }
+        CardMenu.show(this, anchor, CardMenu.forItem(this, item, extra) { refreshPersonalRows { focusRow(curRow) } })
+    }
 
     fun openCurrent(details: Boolean) {
         val it = hero.current ?: return

@@ -32,6 +32,8 @@ interface CardHost {
     fun onCardKey(row: RowDesc, pos: Int, keyCode: Int, e: KeyEvent): Boolean = false
     fun onCardClick(item: Item)
     fun onCardLongClick(item: Item) {}
+    /** Press and hold OK on a card: pages show the options menu; the default is the old long-press action. */
+    fun onCardMenu(row: RowDesc, item: Item, anchor: View) = onCardLongClick(item)
     fun onRowEmpty(row: RowDesc) {}
 }
 
@@ -137,7 +139,7 @@ class CardAdapter(private val row: RowDesc, private val host: CardHost) : Recycl
             if (e.action == KeyEvent.ACTION_DOWN && p >= 0) host.onCardKey(row, p, code, e) else false
         }
         h.itemView.setOnClickListener { val p = h.bindingAdapterPosition; if (p >= 0) host.onCardClick(row.items[p]) }
-        h.itemView.setOnLongClickListener { val p = h.bindingAdapterPosition; if (p >= 0) host.onCardLongClick(row.items[p]); true }
+        h.itemView.setOnLongClickListener { val p = h.bindingAdapterPosition; if (p >= 0) host.onCardMenu(row, row.items[p], h.itemView); true }
 
         if (pos >= row.items.size - 12 && !row.done) loadMore()
         // Fill in TMDB art/plot for visible cards in the background (cached in SQLite; never blocks the UI).

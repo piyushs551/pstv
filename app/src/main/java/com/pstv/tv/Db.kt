@@ -217,6 +217,18 @@ object Db {
     fun lastEpisode(parent: String): Triple<String, String?, Long>? =
         rd.rawQuery("SELECT url, label, pos FROM recents WHERE parent=? ORDER BY ts DESC LIMIT 1", arrayOf(parent)).use { if (it.moveToFirst()) Triple(it.getString(0), it.getString(1), it.getLong(2)) else null }
 
+    /** Remove a title (or a series and all its episodes) from Continue Watching. */
+    fun removeRecent(url: String) { wr.delete("recents", "url=? OR parent=?", arrayOf(url, url)); pruneAudioPrefs() }
+
+    fun clearRecents(kind: Kind?) {
+        if (kind == null) wr.delete("recents", null, null)
+        else wr.execSQL("DELETE FROM recents WHERE COALESCE(parent, url) IN (SELECT url FROM items WHERE kind=?)", arrayOf(kind.ordinal))
+        pruneAudioPrefs()
+    }
+
+    fun removeLiveHist(url: String) { wr.delete("livehist", "url=?", arrayOf(url)) }
+    fun clearLiveHist() { wr.delete("livehist", null, null) }
+
     fun touchLive(url: String) {
         wr.insertWithOnConflict("livehist", null, ContentValues().apply { put("url", url); put("ts", System.currentTimeMillis()) }, SQLiteDatabase.CONFLICT_REPLACE)
     }

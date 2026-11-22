@@ -232,4 +232,5 @@ class SearchActivity : BaseActivity(), CardHost {
 
     override fun onCardClick(item: Item) { remember(q.text.toString()); Nav.open(this, item) }
     override fun onCardLongClick(item: Item) = Nav.info(this, item)
+    override fun onCardMenu(row: RowDesc, item: Item, anchor: View) = CardMenu.show(this, anchor, CardMenu.forItem(this, item))
 }
