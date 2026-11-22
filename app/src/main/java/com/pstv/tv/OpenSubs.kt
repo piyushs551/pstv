@@ -13,7 +13,7 @@ object OpenSubs {
 
     data class Hit(val fileId: Int, val release: String, val lang: String, val downloads: Int)
 
-    private fun headers() = mapOf("Api-Key" to Prefs.osKey, "Accept" to "application/json", "User-Agent" to "PSTV v${BuildConfig.VERSION_NAME}")   // OpenSubtitles wants "AppName vX.Y"
+    private fun headers() = mapOf("Api-Key" to Prefs.osKey, "Accept" to "application/json")
 
     fun search(title: String, year: Int?, season: Int?, episode: Int?): List<Hit> {
         require(Prefs.osKey.isNotEmpty()) { "Add your OpenSubtitles API key in Settings" }
@@ -45,22 +45,20 @@ object OpenSubs {
 
     /** Returns the subtitle as SRT text. */
     fun download(fileId: Int): String {
-        val anon = Prefs.osUser.isEmpty() || Prefs.osPass.isEmpty()   // consumers that allow anonymous use can download without logging in
-        if (!anon && token == null) login()
+        if (token == null) login()
         fun call(): String {
             val body = JSONObject().put("file_id", fileId).toString().toRequestBody("application/json".toMediaType())
             val req = Http.req("https://$tokenHost/api/v1/download").apply {
                 headers().forEach { (k, v) -> header(k, v) }
-                if (!anon) header("Authorization", "Bearer $token")
+                header("Authorization", "Bearer $token")
             }.post(body).build()
             Http.client.newCall(req).execute().use { r ->
                 if (r.code == 401) { token = null; error("401") }
-                val txt = r.body!!.string()
-                if (!r.isSuccessful) error("Download failed (HTTP ${r.code}" + (runCatching { JSONObject(txt).optString("message") }.getOrDefault("").let { if (it.isNotBlank()) ": ${it.take(100)}" else "" }) + ")")
-                return JSONObject(txt).optString("link").ifBlank { error("No download link (quota reached?)") }
+                if (!r.isSuccessful) error("Download failed (HTTP ${r.code})")
+                return JSONObject(r.body!!.string()).optString("link").ifBlank { error("No download link (quota reached?)") }
             }
         }
-        val link = try { call() } catch (e: IllegalStateException) { if (e.message == "401" && !anon) { login(); call() } else throw e }
+        val link = try { call() } catch (e: IllegalStateException) { if (e.message == "401") { login(); call() } else throw e }
         return Http.getString(link)
     }
 }

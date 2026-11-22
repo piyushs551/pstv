@@ -24,13 +24,8 @@ object Http {
         val b = req(url)
         headers.forEach { (k, v) -> b.header(k, v) }
         client.newCall(b.build()).execute().use { r ->
-            val body = r.body!!.string()
-            if (!r.isSuccessful) {
-                // APIs such as OpenSubtitles explain the refusal in a small JSON body ({"message": "..."}): show it.
-                val why = runCatching { org.json.JSONObject(body).let { it.optString("message").ifBlank { it.optString("error") } } }.getOrDefault("")
-                error("HTTP ${r.code}" + if (why.isNotBlank()) ": ${why.take(120)}" else "")
-            }
-            return body
+            if (!r.isSuccessful) error("HTTP ${r.code}")
+            return r.body!!.string()
         }
     }
 }
